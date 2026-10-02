@@ -1,0 +1,13 @@
+{
+  "id": "qwen3",
+  "version": 1,
+  "arch": [
+    "qwen3"
+  ],
+  "base": "transformer",
+  "description": "Qwen 3 denso (q/k-norm por cabeza, sin sesgos). Añadida SOLO con este manifiesto: ejemplo de arquitectura declarativa.",
+  "options": {
+    "rope": "neox"
+  },
+  "fallback_template": "chatml"
+}

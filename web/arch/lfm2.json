@@ -1,0 +1,13 @@
+{
+  "id": "lfm2",
+  "version": 1,
+  "arch": [
+    "lfm2"
+  ],
+  "base": "lfm2",
+  "description": "Liquid LFM2 / LFM2.5 (convoluciones cortas + atención con ventana)",
+  "vision": [
+    "lfm2"
+  ],
+  "fallback_template": "lfm2"
+}

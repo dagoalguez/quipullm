@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>quipullm engine</title>
+<style>
+  :root { --fondo:#f4f5f7; --panel:#fff; --linea:#dde1e6; --texto:#1f2328; --tenue:#667085; --ok:#1a7f37; --mal:#cf222e; --acento:#0f5ea8; }
+  body { margin:0; font-family:"Segoe UI", system-ui, sans-serif; background:var(--fondo); color:var(--texto); font-size:14px; }
+  header { background:#1f2a37; color:#fff; padding:12px 18px; display:flex; justify-content:space-between; align-items:center; }
+  header b { font-size:16px; }
+  .aviso { background:#fff4ce; border-bottom:1px solid #e9d99a; padding:8px 18px; font-size:13px; }
+  main { padding:14px 18px; display:grid; gap:12px; }
+  .tarjeta { background:var(--panel); border:1px solid var(--linea); border-radius:8px; padding:12px 14px; }
+  .fila { display:flex; gap:10px; padding:3px 0; }
+  .fila span:first-child { width:130px; color:var(--tenue); flex-shrink:0; }
+  .mono { font-family:Consolas, monospace; }
+  #conexion.ok { color:#7ee2a0; } #conexion.mal { color:#ffb3b3; }
+  .pista { height:6px; background:#e8ebef; border-radius:3px; overflow:hidden; margin-top:6px; }
+  #barra { height:100%; width:0; background:var(--acento); transition:width .3s; }
+  #log { font-family:Consolas, monospace; font-size:12px; max-height:330px; overflow:auto; color:#333; }
+  #log div { padding:2px 0; border-bottom:1px solid #f0f1f3; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<header><b>quipullm engine</b><span>Server: <span id="conexion">connecting…</span></span></header>
+<div class="aviso">This window does the server's computations. <b>Do not close it</b> (you can minimize it).</div>
+<main>
+  <div class="tarjeta">
+    <div class="fila"><span>Status</span><b id="estado">Starting…</b></div>
+    <div class="fila"><span>Graphics card</span><span id="gpu" class="mono">—</span></div>
+    <div class="fila"><span>Loaded model</span><span id="modelo" class="mono">(none)</span></div>
+    <div class="fila"><span>Last speed</span><span id="velocidad" class="mono">—</span></div>
+    <div class="fila"><span>Loading</span><span id="progreso" class="mono"></span></div>
+    <div class="pista"><div id="barra"></div></div>
+  </div>
+  <div class="tarjeta"><div id="log"></div></div>
+</main>
+<script type="module" src="/web/js/engine.js"></script>
+</body>
+</html>

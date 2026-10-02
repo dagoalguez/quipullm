@@ -1,0 +1,24 @@
+name: New architecture request
+description: Ask for (or offer) support for a model family
+labels: [new-architecture]
+body:
+  - type: input
+    id: arch
+    attributes:
+      label: general.architecture value in the GGUF
+    validations: { required: true }
+  - type: input
+    id: model
+    attributes:
+      label: Example model (link to the GGUF)
+  - type: textarea
+    id: notes
+    attributes:
+      label: What differs from a supported architecture?
+      description: See docs/ARCH_GUIDE.md. Fused tensors, scaled RoPE, SSM layers, new tokenizer...
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribution
+      options:
+        - label: I can open a PR with a manifest/module, a generator variant and conformance output (docs/ARCH_GUIDE.md §5)

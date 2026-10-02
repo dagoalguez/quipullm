@@ -1,0 +1,10 @@
+{
+  "id": "nomic-bert",
+  "version": 1,
+  "arch": [
+    "nomic-bert"
+  ],
+  "base": "bert",
+  "description": "nomic-embed-text (embeddings)",
+  "embedding": true
+}

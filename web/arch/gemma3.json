@@ -1,0 +1,16 @@
+{
+  "id": "gemma3",
+  "version": 1,
+  "arch": [
+    "gemma3"
+  ],
+  "base": "transformer",
+  "description": "Google Gemma 3 (ventana deslizante, q/k-norm, normas posteriores, visión)",
+  "options": {
+    "rope": "neox"
+  },
+  "vision": [
+    "gemma3"
+  ],
+  "fallback_template": "gemma3"
+}

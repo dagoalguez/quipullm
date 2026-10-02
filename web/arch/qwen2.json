@@ -1,0 +1,13 @@
+{
+  "id": "qwen2",
+  "version": 1,
+  "arch": [
+    "qwen2"
+  ],
+  "base": "transformer",
+  "description": "Qwen 2 / 2.5 y derivados (DeepSeek-R1-Distill-Qwen)",
+  "options": {
+    "rope": "neox"
+  },
+  "fallback_template": "qwen2"
+}

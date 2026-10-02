@@ -1,0 +1,14 @@
+# Dependencias SOLO para las pruebas --engine (desarrollo). El servidor no necesita nada de esto.
+# Versiones de referencia: con ellas pasa toda la batería, incluida la visión (ver docs/LIMITATIONS.md).
+llama-cpp-python==0.3.35
+gguf==0.19.0
+numpy==2.4.4
+# Sin fijar (última corrida: Pillow 12.2.0, Jinja2 3.1.6, regex 2026.9.29, Playwright 1.56.0 con su Chromium):
+pillow
+regex
+jinja2
+playwright
+
+# Si Python se cierra con "Illegal instruction" al usar llama_cpp, el binario se compiló para otra CPU. Recompila sin
+# optimizaciones nativas:  CMAKE_ARGS="-DGGML_NATIVE=OFF -DGGML_AVX2=ON" pip install --no-cache-dir --no-binary llama-cpp-python \
+#                          --force-reinstall --no-deps llama-cpp-python==0.3.35

@@ -1,0 +1,24 @@
+# Engine vs llama.cpp with synthetic models (slow: builds llama-cpp-python and generates models).
+# Runs on demand; uses SwiftShader (software WebGPU), so it checks correctness, not speed.
+name: conformance
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "Optional transformer variant (e.g. qwen3-q4km). Empty = everything."
+        required: false
+        default: ""
+jobs:
+  motor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Development dependencies (not needed to run the server)
+        run: |
+          pip install -r tests/requirements-engine.txt
+          python -m playwright install --with-deps chromium
+      - name: Engine conformance
+        run: python tests/run_all.py --engine ${{ github.event.inputs.variant }}

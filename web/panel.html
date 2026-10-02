@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>quipullm</title>
+<style>
+  :root { --fondo:#f4f5f7; --panel:#fff; --linea:#dde1e6; --texto:#1f2328; --tenue:#667085; --ok:#1a7f37; --mal:#cf222e; --aviso:#9a6700; --acento:#0f5ea8; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Segoe UI", system-ui, sans-serif; background:var(--fondo); color:var(--texto); font-size:14px; }
+  header { background:#1f2a37; color:#fff; padding:12px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  header h1 { font-size:17px; margin:0; font-weight:600; }
+  .insignia { padding:3px 10px; border-radius:12px; font-size:12px; font-weight:600; }
+  .insignia.ok { background:#dafbe1; color:var(--ok); } .insignia.mal { background:#ffebe9; color:var(--mal); } .insignia.aviso { background:#fff8c5; color:var(--aviso); }
+  main { padding:16px 20px; display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:14px; max-width:1400px; }
+  .tarjeta { background:var(--panel); border:1px solid var(--linea); border-radius:8px; padding:14px 16px; min-width:0; }
+  .ancha { grid-column: 1 / -1; }
+  h2 { font-size:14px; margin:0 0 10px; color:#344054; text-transform:uppercase; letter-spacing:.03em; }
+  .fila { display:flex; gap:10px; padding:3px 0; align-items:baseline; }
+  .fila > span:first-child { width:140px; color:var(--tenue); flex-shrink:0; }
+  .mono, code { font-family:Consolas, monospace; font-size:13px; }
+  .url { display:flex; justify-content:space-between; align-items:center; gap:8px; background:#f6f8fa; border:1px solid var(--linea); border-radius:6px; padding:7px 10px; margin-bottom:6px; font-family:Consolas, monospace; }
+  button { font-family:inherit; font-size:13px; border:1px solid #c9ced6; background:#fff; border-radius:6px; padding:5px 11px; cursor:pointer; }
+  button:hover { background:#f3f4f6; } button.prim { background:var(--acento); color:#fff; border-color:var(--acento); } button.prim:hover { background:#0c4d8a; }
+  button:disabled { opacity:.5; cursor:default; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid #eef0f3; vertical-align:top; }
+  th { color:var(--tenue); font-weight:600; font-size:12px; }
+  tr.cargado td { background:#eef6ff; }
+  .tenue { color:var(--tenue); }
+  .etq { font-size:11px; padding:1px 6px; border-radius:8px; background:#eef0f3; color:#475467; margin-left:4px; white-space:nowrap; }
+  .etq.aviso { background:#fff8c5; color:var(--aviso); }
+  .etq.si { background:#dafbe1; color:var(--ok); } .etq.no { background:#fff1e5; color:#bc4c00; }
+  textarea, select, input { font-family:inherit; font-size:14px; border:1px solid #c9ced6; border-radius:6px; padding:7px 9px; width:100%; }
+  textarea { min-height:80px; resize:vertical; }
+  #salida { white-space:pre-wrap; background:#f6f8fa; border:1px solid var(--linea); border-radius:6px; padding:10px; min-height:60px; margin-top:8px; font-size:14px; }
+  #salida .razon { color:var(--tenue); font-style:italic; }
+  #logs { font-family:Consolas, monospace; font-size:12px; max-height:300px; overflow:auto; }
+  #logs div { padding:2px 0; border-bottom:1px solid #f3f4f6; white-space:pre-wrap; }
+  #logs .WARNING, #logs .ERROR { color:var(--mal); }
+  .campo { display:flex; gap:8px; align-items:center; margin:5px 0; }
+  .campo > label { width:170px; color:var(--tenue); flex-shrink:0; }
+  .campo input[type=number] { width:120px; } .campo input[type=checkbox] { width:auto; }
+  .rejilla { display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:4px 28px; }
+  .aviso { background:#fff8c5; border:1px solid #eac54f; color:#6a4d00; border-radius:6px; padding:7px 10px; margin-bottom:8px; }
+  .nota { background:#eef6ff; border:1px solid #c5def5; border-radius:6px; padding:8px 11px; }
+  #explorador { border:1px solid var(--linea); border-radius:6px; margin-top:6px; background:#fbfbfc; display:none; }
+  #explorador .cab { display:flex; gap:8px; align-items:center; padding:6px 8px; border-bottom:1px solid var(--linea); }
+  #explorador .lista { max-height:220px; overflow:auto; }
+  #explorador .lista div { padding:4px 10px; cursor:pointer; font-family:Consolas,monospace; font-size:13px; }
+  #explorador .lista div:hover { background:#eef6ff; }
+  #cfgMsg.ok { color:var(--ok); } #cfgMsg.mal { color:var(--mal); }
+  .controles { display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+<header>
+  <h1>quipullm</h1>
+  <span id="insMotor" class="insignia aviso" data-i="engineBadge"></span>
+  <span id="insTrabajo" class="tenue"></span>
+  <span style="flex:1"></span>
+  <select id="lang" aria-label="Language" style="width:auto;padding:3px 6px"><option value="en">English</option><option value="es">Español</option></select>
+  <span class="tenue" id="version"></span>
+</header>
+<main>
+  <section class="tarjeta">
+    <h2 data-i="reach"></h2>
+    <div id="urls"></div>
+    <div class="tenue" style="margin-top:6px" data-ih="reachHelp"></div>
+  </section>
+
+  <section class="tarjeta">
+    <h2 data-i="engine"></h2>
+    <div class="fila"><span data-i="status"></span><b id="mEstado">—</b></div>
+    <div class="fila"><span data-i="gpu"></span><span id="mGpu" class="mono">—</span></div>
+    <div class="fila"><span data-i="loaded"></span><span id="mModelo" class="mono">—</span></div>
+    <div class="fila"><span data-i="gpuMem"></span><span id="mMem" class="mono">—</span></div>
+    <div class="fila"><span data-i="gpuType"></span><span id="mTipo">—</span></div>
+    <div class="fila"><span data-i="ram"></span><span id="mRam" class="mono">—</span></div>
+    <div class="fila"><span data-i="budget"></span><span id="mPres" class="mono">—</span></div>
+    <div class="fila"><span data-i="queued"></span><span id="mCola">0</span></div>
+    <div id="mAvisos"></div>
+    <div class="controles">
+      <button id="btnAbrir" data-i="openEngine"></button>
+      <button id="btnDescargar" data-i="free"></button>
+    </div>
+  </section>
+
+  <section class="tarjeta">
+    <h2 data-i="usage"></h2>
+    <div class="fila"><span data-i="requests"></span><span id="sPet">0</span></div>
+    <div class="fila"><span data-i="tokensGen"></span><span id="sTok">0</span></div>
+    <div class="fila"><span data-i="errors"></span><span id="sErr">0</span></div>
+    <div class="fila"><span data-i="modelsDir"></span><span id="sDir" class="mono"></span></div>
+  </section>
+
+  <section class="tarjeta ancha nota" id="notaUso">
+    <b data-i="noteHow"></b> <span data-i="noteBody1"></span> <b id="nPc" data-i="serverPc"></b> <span data-i="noteBody2"></span>
+  </section>
+
+  <section class="tarjeta ancha">
+    <h2 data-i="config"></h2>
+    <div id="cfgAviso" class="aviso" style="display:none"><span data-i="cfgRemote"></span> (<span class="nPc"></span>).</div>
+    <div class="campo"><label for="cCarpeta" data-i="modelsDir"></label>
+      <input id="cCarpeta" class="mono" placeholder="D:\models">
+      <button id="btnExaminar" data-i="browse"></button></div>
+    <div id="explorador">
+      <div class="cab"><button id="exSubir" data-i="up"></button><span id="exRuta" class="mono" style="flex:1;word-break:break-all"></span>
+        <span id="exInfo" class="tenue"></span><button class="prim" id="exElegir" data-i="useFolder"></button><button id="exCerrar" data-i="close"></button></div>
+      <div class="lista" id="exLista"></div>
+    </div>
+    <div class="tenue" style="margin:2px 0 8px 178px" data-i="folderNote"></div>
+    <div class="rejilla">
+      <div>
+        <div class="campo"><label for="cCtx" data-i="defCtx"></label><input id="cCtx" type="number" min="256" step="256"><span class="tenue" data-i="tokens"></span></div>
+        <div class="campo"><label for="cKv" data-i="kvMax"></label><input id="cKv" type="number" min="0" step="64"><span class="tenue" data-i="mbAuto"></span></div>
+        <div class="campo"><label for="cMemGpu" data-i="budget"></label><input id="cMemGpu" type="number" min="0" step="0.5"><span class="tenue" data-i="gbEst"></span></div>
+        <div class="campo"><label for="cAuto" data-i="autoFit"></label><input id="cAuto" type="checkbox"><span class="tenue" data-i="autoFitHelp"></span></div>
+        <div class="campo"><label for="cTimeout" data-i="timeout"></label><input id="cTimeout" type="number" min="30" step="30"><span class="tenue" data-i="timeoutHelp"></span></div>
+        <div class="campo"><label for="cPuerto" data-i="port"></label><input id="cPuerto" type="number" min="1" max="65535"><span class="tenue" data-i="restart"></span></div>
+        <div class="campo"><label for="cCola" data-i="maxQueue"></label><input id="cCola" type="number" min="0" step="1"><span class="tenue" data-i="maxQueueHelp"></span></div>
+        <div class="campo"><label for="cClaveApi" data-i="apiKey"></label><input id="cClaveApi" type="password" autocomplete="new-password" data-iph="noChange"><span class="tenue" id="cClaveEstado"></span></div>
+        <div class="campo"><label for="cAbrir" data-i="openAtStart"></label><input id="cAbrir" type="checkbox"></div>
+      </div>
+      <div>
+        <div class="tenue" style="margin:5px 0" data-i="sampling"></div>
+        <div class="campo"><label for="cTemp" data-i="temp"></label><input id="cTemp" type="number" step="0.05" min="0" max="5"></div>
+        <div class="campo"><label for="cTopK">Top K</label><input id="cTopK" type="number" step="1" min="0"></div>
+        <div class="campo"><label for="cTopP">Top P</label><input id="cTopP" type="number" step="0.01" min="0" max="1"></div>
+        <div class="campo"><label for="cMinP">Min P</label><input id="cMinP" type="number" step="0.01" min="0" max="1"></div>
+        <div class="campo"><label for="cRep" data-i="repPen"></label><input id="cRep" type="number" step="0.05" min="0.5" max="3"></div>
+      </div>
+    </div>
+    <div class="controles"><button class="prim" id="btnGuardarCfg" data-i="save"></button><span id="cfgMsg"></span></div>
+  </section>
+
+  <section class="tarjeta ancha">
+    <h2 data-i="models"></h2>
+    <table>
+      <thead><tr><th data-i="thId"></th><th data-i="thArch"></th><th data-i="thQuant"></th><th data-i="thSize"></th><th data-i="thMem"></th><th data-i="thCtx"></th><th></th></tr></thead>
+      <tbody id="tablaModelos"></tbody>
+    </table>
+    <div class="controles"><button id="btnEscanear" data-i="rescan"></button></div>
+  </section>
+
+  <section class="tarjeta ancha">
+    <h2 data-i="test"></h2>
+    <div class="controles" style="margin-top:0">
+      <select id="pModelo" style="max-width:360px"></select>
+      <label class="tenue"><span data-i="lblTemp"></span> <input id="pTemp" type="number" step="0.1" min="0" max="2" value="0.7" style="width:70px"></label>
+      <label class="tenue"><span data-i="lblMax"></span> <input id="pMax" type="number" min="1" value="300" style="width:80px"></label>
+    </div>
+    <div class="controles" id="filaClave" style="display:none"><label class="tenue" for="pClave" data-i="keyRequired"></label>
+      <input id="pClave" type="password" autocomplete="off" style="max-width:260px"></div>
+    <textarea id="pTexto" style="margin-top:8px"></textarea>
+    <div class="controles">
+      <button class="prim" id="btnEnviar" data-i="send"></button>
+      <button id="btnParar" disabled data-i="stop"></button>
+      <span id="pInfo" class="tenue"></span>
+    </div>
+    <div id="salida"></div>
+  </section>
+
+  <section class="tarjeta ancha">
+    <h2 data-i="recent"></h2>
+    <table>
+      <thead><tr><th data-i="thTime"></th><th data-i="thModel"></th><th data-i="thFrom"></th><th data-i="thPrompt"></th><th data-i="thCompl"></th><th>tok/s</th><th data-i="thSecs"></th></tr></thead>
+      <tbody id="tablaHist"></tbody>
+    </table>
+  </section>
+
+  <section class="tarjeta ancha">
+    <h2 data-i="log"></h2>
+    <div id="logs"></div>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const CLAVE = { get() { try { return localStorage.getItem("llm_clave") || ""; } catch { return ""; } }, set(v) { try { localStorage.setItem("llm_clave", v); } catch {} } };
+const cab = (extra = {}) => Object.assign({}, extra, CLAVE.get() ? { Authorization: "Bearer " + CLAVE.get() } : {});
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const I18N = {
+  en: {
+ "engineBadge": "engine: …",
+ "badgeDown": "server is down",
+ "badgeWorking": "engine: working",
+ "badgeReady": "engine: ready",
+ "badgeOff": "engine: disconnected",
+ "reach": "Reachable at",
+ "reachHelp": "In your code, replace the LM Studio address with one of these (it ends in <span class=\"mono\">/v1</span>). The first uses the PC name and does not change when the IP changes; if your network does not resolve names, use the IP.",
+ "localOnly": "This PC only. To open it to the network: \"host\": \"0.0.0.0\" in config.json plus an API key.",
+ "copy": "Copy",
+ "engine": "Engine",
+ "status": "Status",
+ "gpu": "Graphics card",
+ "loaded": "Loaded model",
+ "gpuMem": "GPU memory",
+ "gpuType": "GPU type",
+ "ram": "Machine RAM",
+ "budget": "Memory for models",
+ "budgetTip": "Estimate: WebGPU does not report free VRAM",
+ "budgetTipSrc": "Estimate ({src}). WebGPU does not report free VRAM.",
+ "queued": "Queued",
+ "openEngine": "Open engine",
+ "openEngineTip": "Opens the engine window on this PC",
+ "openEngineRemote": "The engine can only be opened on the server PC",
+ "free": "Free memory",
+ "usage": "Usage",
+ "requests": "Requests",
+ "tokensGen": "Generated tokens",
+ "errors": "Errors",
+ "modelsDir": "Models folder",
+ "noteHow": "How is it used from other PCs?",
+ "noteBody1": "Anyone who opens this address only needs a browser: models run on the graphics card of",
+ "serverPc": "the server PC",
+ "noteBody2": "and the model files exist only there. Nothing needs to be installed and the models folder is not needed. Requests are served one at a time, in arrival order; the rest wait in the queue.",
+ "config": "Settings",
+ "cfgRemote": "You are viewing the panel from another PC: you can look at the settings, but they can only be changed from the server PC",
+ "browse": "Browse…",
+ "up": "↑ Up",
+ "useFolder": "Use this folder",
+ "close": "Close",
+ "folderNote": "The folder belongs to the server PC (.gguf files are searched inside, including subfolders).",
+ "defCtx": "Default context",
+ "tokens": "tokens",
+ "kvMax": "Max. context memory",
+ "mbAuto": "MB · 0 = automatic",
+ "gbEst": "GB · 0 = estimate it automatically",
+ "autoFit": "Memory auto-fit",
+ "autoFitHelp": "rejects models that do not fit",
+ "timeout": "Max. wait per request",
+ "timeoutHelp": "seconds (queue + response)",
+ "port": "Port",
+ "restart": "requires restart",
+ "maxQueue": "Max. queued requests",
+ "maxQueueHelp": "0 = unlimited; when full it answers 429",
+ "apiKey": "API key",
+ "noChange": "(unchanged)",
+ "keyEnv": "set by the LLM_API_KEY variable",
+ "keySet": "set · type \"-\" to remove it",
+ "keyNone": "no key: the API is open on the network",
+ "openAtStart": "Open the engine at startup",
+ "sampling": "Default sampling (when the request does not specify it)",
+ "temp": "Temperature",
+ "repPen": "Repetition penalty",
+ "save": "Save",
+ "saving": "Saving…",
+ "saved": "Saved. {n} model(s) in the folder.",
+ "savedRestart": " The new port applies when server.py is restarted.",
+ "models": "Models",
+ "thId": "Id (hover to see the names it accepts)",
+ "thArch": "Architecture",
+ "thQuant": "Quant.",
+ "thSize": "Size",
+ "thMem": "Est. memory",
+ "thCtx": "Context",
+ "rescan": "Rescan the folder",
+ "load": "Load",
+ "supported": "supported",
+ "unsupported": "not supported",
+ "embeddings": "embeddings: ",
+ "vision": "vision",
+ "visionBad": "vision: projector not supported",
+ "visionBadTip": "its mmproj is not of a supported type",
+ "alsoAnswers": "Also answers to: ",
+ "noModels": "No models in the folder. Change it in Settings.",
+ "memFits": "fits",
+ "memTight": "tight",
+ "memNoFit": "does not fit",
+ "memUnknown": "not estimated",
+ "memTip": "Needs ~{gb} GB for weights, context ({ctx} tokens) and margin",
+ "test": "Try it",
+ "lblTemp": "temperature",
+ "lblMax": "max. tokens",
+ "keyRequired": "API key (the server requires it)",
+ "defaultPrompt": "Explain what a database is in 3 sentences.",
+ "send": "Send",
+ "stop": "Stop",
+ "waiting": "waiting for the engine…",
+ "error": "Error: ",
+ "firstToken": "{n} tokens · first token in {s} s",
+ "recent": "Recent requests",
+ "thTime": "Time",
+ "thModel": "Model",
+ "thFrom": "From",
+ "thPrompt": "Prompt tokens",
+ "thCompl": "Response tokens",
+ "thSecs": "Seconds",
+ "log": "Log",
+ "stReady": "Ready",
+ "stWorking": "Working",
+ "stOffRemote": "Disconnected — open the engine on the server PC",
+ "stOffLocal": "Disconnected — press \"Open engine\"",
+ "none": "(none)",
+ "gtInt": "integrated (shares RAM)",
+ "gtDisc": "dedicated",
+ "gtUnk": "not identified",
+ "phase_queued": "queued",
+ "phase_sent to engine": "sent to engine",
+ "phase_generating": "generating",
+ "secs": "s",
+ "lang": "Language"
+},
+  es: {
+ "engineBadge": "motor: …",
+ "badgeDown": "servidor apagado",
+ "badgeWorking": "motor: trabajando",
+ "badgeReady": "motor: listo",
+ "badgeOff": "motor: desconectado",
+ "reach": "Direcciones (Reachable at)",
+ "reachHelp": "En el código reemplaza la dirección de LM Studio por una de estas (termina en <span class=\"mono\">/v1</span>). La primera usa el nombre de la PC y no cambia aunque cambie la IP; si tu red no resuelve nombres, usa la IP.",
+ "localOnly": "Solo este PC. Para la red: \"host\": \"0.0.0.0\" en config.json y una clave de API.",
+ "copy": "Copiar",
+ "engine": "Motor",
+ "status": "Estado",
+ "gpu": "Tarjeta gráfica",
+ "loaded": "Modelo cargado",
+ "gpuMem": "Memoria en GPU",
+ "gpuType": "Tipo de GPU",
+ "ram": "RAM del equipo",
+ "budget": "Memoria para modelos",
+ "budgetTip": "Estimación: WebGPU no informa la VRAM libre",
+ "budgetTipSrc": "Estimación ({src}). WebGPU no informa la VRAM libre.",
+ "queued": "En cola",
+ "openEngine": "Abrir motor",
+ "openEngineTip": "Abre la ventana del motor en esta PC",
+ "openEngineRemote": "El motor solo se abre en la PC servidora",
+ "free": "Liberar memoria",
+ "usage": "Uso",
+ "requests": "Peticiones",
+ "tokensGen": "Tokens generados",
+ "errors": "Errores",
+ "modelsDir": "Carpeta de modelos",
+ "noteHow": "¿Cómo se usa desde otras PC?",
+ "noteBody1": "Quien abra esta dirección solo necesita un browser: los modelos se ejecutan en la tarjeta gráfica de",
+ "serverPc": "la PC servidora",
+ "noteBody2": "y los archivos de modelos están únicamente ahí. No necesitan instalar nada ni tener la carpeta de modelos. Las peticiones se atienden de a una, en orden de llegada; si hay varias, las demás esperan en cola.",
+ "config": "Configuración",
+ "cfgRemote": "Estás viendo el panel desde otra PC: puedes mirar la configuración, pero solo se cambia desde la PC servidora",
+ "browse": "Examinar…",
+ "up": "↑ Subir",
+ "useFolder": "Usar esta carpeta",
+ "close": "Cerrar",
+ "folderNote": "La carpeta es de la PC servidora (se buscan .gguf dentro, incluso en subcarpetas).",
+ "defCtx": "Contexto por defecto",
+ "tokens": "tokens",
+ "kvMax": "Memoria máx. del contexto",
+ "mbAuto": "MB · 0 = automática",
+ "gbEst": "GB · 0 = estimarla sola",
+ "autoFit": "Autoajuste de memoria",
+ "autoFitHelp": "rechaza modelos que no caben",
+ "timeout": "Espera máxima por petición",
+ "timeoutHelp": "segundos (cola + respuesta)",
+ "port": "Puerto",
+ "restart": "requiere reiniciar",
+ "maxQueue": "Máx. peticiones en cola",
+ "maxQueueHelp": "0 = sin límite; al llenarse responde 429",
+ "apiKey": "Clave de API",
+ "noChange": "(sin cambios)",
+ "keyEnv": "fijada por la variable LLM_API_KEY",
+ "keySet": "definida · escribe «-» para quitarla",
+ "keyNone": "sin clave: la API está abierta en la red",
+ "openAtStart": "Abrir el motor al iniciar",
+ "sampling": "Muestreo por defecto (cuando la petición no lo indica)",
+ "temp": "Temperatura",
+ "repPen": "Penalización repetición",
+ "save": "Guardar",
+ "saving": "Guardando…",
+ "saved": "Guardado. {n} modelo(s) en la carpeta.",
+ "savedRestart": " El puerto nuevo se aplica al reiniciar server.py.",
+ "models": "Modelos",
+ "thId": "Id (pasa el mouse para ver los nombres que acepta)",
+ "thArch": "Arquitectura",
+ "thQuant": "Cuant.",
+ "thSize": "Tamaño",
+ "thMem": "Memoria est.",
+ "thCtx": "Contexto",
+ "rescan": "Volver a escanear la carpeta",
+ "load": "Cargar",
+ "supported": "soportado",
+ "unsupported": "no soportado",
+ "embeddings": "embeddings: ",
+ "vision": "visión",
+ "visionBad": "visión: proyector no soportado",
+ "visionBadTip": "su mmproj no es de un tipo soportado",
+ "alsoAnswers": "También responde a: ",
+ "noModels": "No hay modelos en la carpeta. Cámbiala en Configuración.",
+ "memFits": "cabe",
+ "memTight": "justo",
+ "memNoFit": "no cabe",
+ "memUnknown": "sin estimar",
+ "memTip": "Necesita ~{gb} GB entre pesos, contexto ({ctx} tokens) y margen",
+ "test": "Probar",
+ "lblTemp": "temperatura",
+ "lblMax": "máx. tokens",
+ "keyRequired": "Clave de API (el servidor la exige)",
+ "defaultPrompt": "Explica qué es una base de datos en 3 frases.",
+ "send": "Enviar",
+ "stop": "Detener",
+ "waiting": "esperando al motor…",
+ "error": "Error: ",
+ "firstToken": "{n} tokens · primer token en {s} s",
+ "recent": "Últimas peticiones",
+ "thTime": "Hora",
+ "thModel": "Modelo",
+ "thFrom": "Desde",
+ "thPrompt": "Tokens prompt",
+ "thCompl": "Tokens respuesta",
+ "thSecs": "Segundos",
+ "log": "Registro",
+ "stReady": "Listo",
+ "stWorking": "Trabajando",
+ "stOffRemote": "Desconectado — abre el motor en la PC servidora",
+ "stOffLocal": "Desconectado — pulsa «Abrir motor»",
+ "none": "(ninguno)",
+ "gtInt": "integrada (comparte la RAM)",
+ "gtDisc": "dedicada",
+ "gtUnk": "no identificada",
+ "phase_queued": "en cola",
+ "phase_sent to engine": "enviado al motor",
+ "phase_generating": "generando",
+ "secs": "s",
+ "lang": "Idioma"
+},
+};
+let LANG = "en";
+try { LANG = localStorage.getItem("quipullm_lang") || ""; } catch {}
+if (!I18N[LANG]) LANG = (navigator.language || "en").toLowerCase().startsWith("es") ? "es" : "en";
+const t = (k, v) => { let s = (I18N[LANG][k] ?? I18N.en[k] ?? k); if (v) for (const [a, b] of Object.entries(v)) s = s.split("{" + a + "}").join(b); return s; };
+function aplicarIdioma() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll("[data-i]").forEach((e) => { e.textContent = t(e.dataset.i); });
+  document.querySelectorAll("[data-ih]").forEach((e) => { e.innerHTML = t(e.dataset.ih); });
+  document.querySelectorAll("[data-iph]").forEach((e) => { e.placeholder = t(e.dataset.iph); });
+  $("lang").value = LANG;
+}
+let ultimoModelos = "", REMOTO = false, cfgCargada = false;
+const TXT_MEM = { fits: ["si", "memFits"], tight: ["aviso", "memTight"], no_fit: ["no", "memNoFit"], unknown: ["", "memUnknown"] };
+function memoria(x) {
+  if (!x.memory) return '<span class="tenue">—</span>';
+  const [clase, kt] = TXT_MEM[x.memory.state] || ["", null];
+  const txt = kt ? t(kt) : x.memory.state;
+  return `<span class="etq ${clase}" title="${esc(t("memTip", { gb: x.memory.needs_gb, ctx: x.ctx }))}">${txt}</span> <span class="tenue mono">~${x.memory.needs_gb} GB</span>`;
+}
+const PROXIMA = { qwen2: "v2", llama: "v2", granite: "v2", gemma3: "v3" };
+
+async function refrescar() {
+  let st;
+  try { st = await (await fetch("/api/status")).json(); }
+  catch { $("insMotor").className = "insignia mal"; $("insMotor").textContent = t("badgeDown"); return; }
+  $("version").textContent = "v" + st.version;
+  REMOTO = !st.from_server_pc;
+  $("filaClave").style.display = st.requires_key ? "flex" : "none";
+  document.querySelectorAll("#nPc, .nPc").forEach((e) => { e.textContent = st.pc_name || t("serverPc"); });
+  $("btnAbrir").disabled = REMOTO;
+  $("btnAbrir").title = REMOTO ? t("openEngineRemote") : t("openEngineTip");
+  $("cfgAviso").style.display = REMOTO ? "block" : "none";
+  if (!cfgCargada) cargarCfg();
+  const m = st.engine;
+  const ins = $("insMotor");
+  if (m.connected) { ins.className = "insignia ok"; ins.textContent = st.current_job ? t("badgeWorking") : t("badgeReady"); }
+  else { ins.className = "insignia mal"; ins.textContent = t("badgeOff"); }
+  $("insTrabajo").textContent = st.current_job ? `${st.current_job.model} · ${t("phase_" + st.current_job.phase)} · ${st.current_job.tokens} tokens · ${st.current_job.seconds}${t("secs")}` : "";
+  $("mEstado").textContent = m.connected ? (st.current_job ? t("stWorking") : t("stReady")) : (REMOTO ? t("stOffRemote") : t("stOffLocal"));
+  const info = m.info || {};
+  $("mGpu").textContent = (info.gpu && (info.gpu.summary || info.gpu)) || "—";
+  $("mModelo").textContent = m.loaded_model || t("none");
+  $("mMem").textContent = info.memory_mb ? (info.memory_mb / 1000).toFixed(2) + " GB" : "—";
+  $("mCola").textContent = st.queued;
+  const hw = st.hardware || {};
+  $("mTipo").textContent = { integrated: t("gtInt"), discrete: t("gtDisc"), unknown: t("gtUnk") }[hw.gpu_type] || "—";
+  $("mRam").textContent = hw.ram_gb ? hw.ram_gb + " GB" + (hw.vram_gb ? ` · VRAM ${hw.vram_gb} GB` : "") : "—";
+  $("mPres").textContent = hw.budget_gb ? "~" + hw.budget_gb + " GB" : "—";
+  $("mPres").title = t("budgetTipSrc", { src: hw.source || "" });
+  $("mAvisos").innerHTML = (hw.warnings || []).map((a) => `<div class="aviso" style="margin-top:6px">${esc(a)}</div>`).join("");
+  $("sPet").textContent = st.stats.requests; $("sTok").textContent = st.stats.tokens_generated; $("sErr").textContent = st.stats.errors;
+  $("sDir").textContent = st.models_dir;
+  $("urls").innerHTML = (st.reachable_at.length ? st.reachable_at : ["http://localhost:" + st.port]).map((u) =>
+    `<div class="url"><span>${esc(u)}</span><button onclick="navigator.clipboard.writeText('${esc(u)}')">${esc(t("copy"))}</button></div>`).join("");
+  if (st.local_only) $("urls").innerHTML += '<div class="tenue" style="margin-top:6px">' + esc(t("localOnly")) + '</div>';
+  const firma = JSON.stringify([st.models, m.loaded_model, LANG]);
+  if (firma !== ultimoModelos) {
+    ultimoModelos = firma;
+    $("tablaModelos").innerHTML = st.models.map((x) => {
+      const est = x.supported ? `<span class="etq si">${t("supported")}</span>`
+        : `<span class="etq no">${x.embedding ? t("embeddings") : ""}${PROXIMA[x.arch] || t("unsupported")}</span>`;
+      return `<tr class="${m.loaded_model === x.id ? "cargado" : ""}">
+        <td class="mono" title="${esc(t("alsoAnswers") + x.match_keys.join(", "))}">${esc(x.id)}${x.vision_ok ? `<span class="etq si">${t("vision")}</span>` : (x.vision ? `<span class="etq no" title="${esc(t("visionBadTip"))}">${t("visionBad")}</span>` : "")}<div class="tenue" style="font-size:12px">${esc(x.file)}</div></td>
+        <td>${esc(x.arch)} ${est}</td><td class="mono">${esc(x.quantization)}</td><td class="mono">${x.gb} GB</td><td>${memoria(x)}</td><td class="mono">${x.ctx}</td>
+        <td>${x.supported ? `<button onclick="cargar('${esc(x.id)}')">${esc(t("load"))}</button>` : ""}</td></tr>`;
+    }).join("") || `<tr><td colspan="7" class="tenue">${t("noModels")}</td></tr>`;
+    const sel = $("pModelo"), prev = sel.value;
+    sel.innerHTML = st.models.filter((x) => x.supported).map((x) => `<option>${esc(x.id)}</option>`).join("");
+    if (prev) sel.value = prev; else if (m.loaded_model) sel.value = m.loaded_model;
+  }
+  $("tablaHist").innerHTML = st.history.map((h) => `<tr><td>${h.time}</td><td class="mono">${esc(h.model)}</td><td>${esc(h.source)}</td>
+    <td>${h.prompt_tokens}</td><td>${h.completion_tokens}</td><td>${h.tps ?? "—"}</td><td>${h.seconds}</td></tr>`).join("");
+}
+
+async function refrescarLogs() {
+  try {
+    const l = await (await fetch("/api/logs")).json();
+    $("logs").innerHTML = l.slice().reverse().map((x) => `<div class="${x.level}">${x.time}  ${esc(x.message)}</div>`).join("");
+  } catch {}
+}
+
+async function cargar(id) {
+  const r = await fetch("/api/load", { method: "POST", headers: cab({ "Content-Type": "application/json" }), body: JSON.stringify({ model: id }) });
+  if (!r.ok) alert((await r.json()).error.message);
+}
+$("btnDescargar").onclick = () => fetch("/api/unload", { method: "POST", headers: cab(), body: "{}" });
+$("btnEscanear").onclick = async () => { await fetch("/api/rescan", { method: "POST", headers: cab(), body: "{}" }); ultimoModelos = ""; refrescar(); };
+// The engine must be opened as 127.0.0.1 (WebGPU needs a secure origin and the bridge only accepts the local PC)
+$("pClave").value = CLAVE.get();
+$("btnAbrir").onclick = () => !REMOTO && window.open(`http://127.0.0.1:${location.port || 80}/engine`, "quipullm-engine", "width=900,height=700");
+
+let control = null;
+$("btnParar").onclick = () => control && control.abort();
+$("btnEnviar").onclick = async () => {
+  const salida = $("salida");
+  salida.innerHTML = "";
+  CLAVE.set($("pClave").value || CLAVE.get());
+  $("btnEnviar").disabled = true; $("btnParar").disabled = false;
+  control = new AbortController();
+  const t0 = performance.now();
+  let n = 0, primer = null, razon = null, cont = null;
+  $("pInfo").textContent = t("waiting");
+  try {
+    const r = await fetch("/v1/chat/completions", {
+      method: "POST", headers: cab({ "Content-Type": "application/json" }), signal: control.signal,
+      body: JSON.stringify({ model: $("pModelo").value, stream: true, temperature: +$("pTemp").value,
+        max_tokens: +$("pMax").value, messages: [{ role: "user", content: $("pTexto").value }] }),
+    });
+    if (!r.ok) { salida.textContent = t("error") + (await r.json()).error.message; return; }
+    const lector = r.body.getReader(), dec = new TextDecoder();
+    let buf = "";
+    for (;;) {
+      const { value, done } = await lector.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n\n")) >= 0) {
+        const linea = buf.slice(0, i).trim(); buf = buf.slice(i + 2);
+        if (!linea.startsWith("data:")) continue;
+        const d = linea.slice(5).trim();
+        if (d === "[DONE]") continue;
+        const j = JSON.parse(d);
+        if (j.error) { salida.append("\n[error] " + j.error.message); continue; }
+        const delta = j.choices[0].delta || {};
+        if (delta.reasoning_content) {
+          if (!razon) { razon = document.createElement("span"); razon.className = "razon"; salida.append(razon); }
+          razon.textContent += delta.reasoning_content;
+        }
+        if (delta.content) {
+          if (!cont) { cont = document.createElement("span"); salida.append(cont); if (razon) cont.textContent = "\n\n"; }
+          cont.textContent += delta.content;
+        }
+        if (delta.content || delta.reasoning_content) { n++; if (!primer) primer = performance.now(); }
+        if (j.usage) n = j.usage.completion_tokens;
+        const s = primer ? (performance.now() - primer) / 1000 : 0;
+        $("pInfo").textContent = t("firstToken", { n, s: primer ? ((primer - t0) / 1000).toFixed(1) : "…" }) + (s > 0.5 ? ` · ${(n / s).toFixed(1)} tok/s` : "");
+      }
+    }
+  } catch (e) {
+    if (e.name !== "AbortError") salida.append("\n[error] " + e.message);
+  } finally {
+    $("btnEnviar").disabled = false; $("btnParar").disabled = true;
+  }
+};
+const CFG_CAMPOS = { cCarpeta: "models_dir", cCtx: "default_ctx", cKv: "kv_max_mb", cMemGpu: "gpu_memory_gb", cTimeout: "timeout_seconds", cCola: "max_queue", cPuerto: "port" };
+const CFG_MUESTREO = { cTemp: "temperature", cTopK: "top_k", cTopP: "top_p", cMinP: "min_p", cRep: "repeat_penalty" };
+function msgCfg(t, ok) { $("cfgMsg").textContent = t; $("cfgMsg").className = ok ? "ok" : "mal"; }
+async function cargarCfg() {
+  try {
+    const c = await (await fetch("/api/config")).json();
+    for (const [id, k] of Object.entries(CFG_CAMPOS)) $(id).value = c[k];
+    for (const [id, k] of Object.entries(CFG_MUESTREO)) $(id).value = c.default_sampling[k];
+    $("cAbrir").checked = c.open_engine; $("cClaveEstado").textContent = c.api_key_from_env ? t("keyEnv") : (c.api_key_set ? t("keySet") : t("keyNone")); $("cAuto").checked = c.memory_check;
+    const bloq = !c.editable;
+    document.querySelectorAll("#cfgAviso ~ * input, #btnExaminar, #btnGuardarCfg").forEach((e) => { e.disabled = bloq; });
+    cfgCargada = true;
+  } catch {}
+}
+$("btnGuardarCfg").onclick = async () => {
+  const cuerpo = { default_sampling: {}, open_engine: $("cAbrir").checked, memory_check: $("cAuto").checked };
+  for (const [id, k] of Object.entries(CFG_CAMPOS)) cuerpo[k] = $(id).value;
+  for (const [id, k] of Object.entries(CFG_MUESTREO)) cuerpo.default_sampling[k] = $(id).value;
+  const nueva = $("cClaveApi").value.trim();
+  if (nueva) cuerpo.api_key = nueva === "-" ? "" : nueva;
+  msgCfg(t("saving"), true);
+  const r = await fetch("/api/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) });
+  const j = await r.json();
+  if (!r.ok) return msgCfg(j.error.message, false);
+  msgCfg(t("saved", { n: j.models }) + (j.restart_required ? t("savedRestart") : ""), true);
+  if (nueva && nueva !== "-") CLAVE.set(nueva); else if (nueva === "-") CLAVE.set("");
+  $("cClaveApi").value = ""; $("pClave").value = CLAVE.get(); cfgCargada = false;
+  ultimoModelos = ""; refrescar();
+};
+let exRuta = "";
+async function explorar(ruta) {
+  const r = await fetch("/api/folders?path=" + encodeURIComponent(ruta));
+  const j = await r.json();
+  if (!r.ok) { $("exInfo").textContent = j.error.message; return false; }
+  exRuta = j.path; $("exRuta").textContent = j.path || (LANG === "es" ? "Unidades" : "Drives");
+  $("exInfo").textContent = j.path ? (LANG === "es" ? `${j.ggufs} archivo(s) .gguf aquí` : `${j.ggufs} .gguf file(s) here`) : "";
+  $("exElegir").disabled = !j.path; $("exSubir").disabled = j.parent === null;
+  $("exSubir").dataset.padre = j.parent ?? "";
+  const sep = j.path.includes("\\") || /^[A-Za-z]:/.test(j.path) ? "\\" : "/";
+  $("exLista").innerHTML = j.folders.map((n) => `<div data-r="${esc(j.path ? (j.path.endsWith(sep) ? j.path : j.path + sep) + n : n)}">📁 ${esc(n)}</div>`).join("")
+    || `<div class="tenue">${LANG === "es" ? "(sin subcarpetas)" : "(no subfolders)"}</div>`;
+  $("exLista").querySelectorAll("div[data-r]").forEach((d) => { d.onclick = () => explorar(d.dataset.r); });
+  return true;
+}
+$("btnExaminar").onclick = () => { $("explorador").style.display = "block"; explorar($("cCarpeta").value.trim()).then((ok) => { if (!ok) explorar(""); }); };
+$("exSubir").onclick = () => explorar($("exSubir").dataset.padre || "");
+$("exElegir").onclick = () => { $("cCarpeta").value = exRuta; $("explorador").style.display = "none"; };
+$("exCerrar").onclick = () => { $("explorador").style.display = "none"; };
+
+$("lang").onchange = () => { LANG = $("lang").value; try { localStorage.setItem("quipullm_lang", LANG); } catch {} const antes = $("pTexto").dataset.def === "1" || !$("pTexto").value; aplicarIdioma(); if (antes) { $("pTexto").value = t("defaultPrompt"); $("pTexto").dataset.def = "1"; } ultimoModelos = ""; cfgCargada = false; refrescar(); };
+$("pTexto").oninput = () => { $("pTexto").dataset.def = "0"; };
+aplicarIdioma(); $("pTexto").value = t("defaultPrompt"); $("pTexto").dataset.def = "1";
+refrescar(); refrescarLogs();
+setInterval(refrescar, 2000); setInterval(refrescarLogs, 4000);
+</script>
+</body>
+</html>

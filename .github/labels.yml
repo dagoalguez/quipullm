@@ -1,0 +1,11 @@
+# Suggested labels (create them once in the repository settings, or with a labels sync action).
+- { name: bug, color: d73a4a, description: Something does not work or gives a wrong result }
+- { name: correctness, color: b60205, description: Numerical mismatch vs llama.cpp }
+- { name: benchmark-report, color: 0e8a16, description: Measured numbers on new hardware }
+- { name: new-architecture, color: 1d76db, description: Support for a model family }
+- { name: hardware, color: 5319e7, description: GPU, driver, OS or browser specific }
+- { name: security, color: e99695, description: Security hardening (report vulnerabilities privately) }
+- { name: docs, color: 0075ca, description: Documentation and translations }
+- { name: good first issue, color: 7057ff, description: Small and well scoped }
+- { name: help wanted, color: 008672, description: Extra attention is needed }
+- { name: roadmap, color: fbca04, description: Planned v4 work }

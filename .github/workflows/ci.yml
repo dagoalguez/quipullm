@@ -1,0 +1,34 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  api-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.9", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ matrix.python }}" }
+      - name: Byte-compile (syntax on this Python version)
+        run: python -m compileall -q server.py templates.py tools tests
+      - name: API tests (standard library only)
+        run: python tests/run_all.py
+  plain-text:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Everything is plain text (except screenshots in docs/img/)
+        run: |
+          if git ls-files | grep -Ei '\.(exe|dll|so|dylib|wasm|whl|pyd|gguf|zip|bin|safetensors)$'; then echo "binary file found"; exit 1; fi
+          bad=0
+          for f in $(git ls-files); do
+            case "$f" in
+              docs/img/*.png|docs/img/*.jpg|docs/img/*.gif)
+                if [ "$(wc -c < "$f")" -gt 1500000 ]; then echo "image too large (>1.5 MB): $f"; bad=1; fi ;;
+              *) if ! iconv -f utf-8 -t utf-8 "$f" > /dev/null 2>&1; then echo "not UTF-8 text: $f"; bad=1; fi ;;
+            esac
+          done
+          exit $bad

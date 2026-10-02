@@ -1,0 +1,8 @@
+quipullm
+Copyright 2026 Diego Alvaro Ever Guevara Bazan (see AUTHORS)
+
+This product includes an independent implementation of GGUF model loading, tokenization and inference.
+It reads the GGUF file format and is validated against llama.cpp (https://github.com/ggml-org/llama.cpp, MIT License)
+and the `gguf` Python package; no llama.cpp source code is included. Model files are not distributed with this project
+and remain under their own licenses.
+LM Studio, llama.cpp, OpenAI and model names are trademarks of their respective owners; this project is not affiliated with them.

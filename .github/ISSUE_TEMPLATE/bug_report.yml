@@ -1,0 +1,37 @@
+name: Bug report
+description: Something does not work or gives a wrong result
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! Please do not paste API keys, internal hostnames or private prompts.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened and what did you expect?
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce (request body, model id)
+    validations: { required: true }
+  - type: input
+    id: model
+    attributes:
+      label: Model file and quantization
+      placeholder: e.g. gemma-3-4b-it-Q4_K_M.gguf
+  - type: input
+    id: hw
+    attributes:
+      label: GPU, driver, OS, browser version
+      placeholder: e.g. Intel UHD 31.0.101, Windows 11, Edge 140
+  - type: input
+    id: version
+    attributes:
+      label: Server version (shown in the panel)
+  - type: textarea
+    id: logs
+    attributes:
+      label: Server log and engine window log
+      render: text

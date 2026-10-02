@@ -1,0 +1,13 @@
+{
+  "id": "granite",
+  "version": 1,
+  "arch": [
+    "granite"
+  ],
+  "base": "transformer",
+  "description": "IBM Granite 3.x (escalas de embedding, residual, atención y logits)",
+  "options": {
+    "rope": "norm"
+  },
+  "fallback_template": "granite"
+}

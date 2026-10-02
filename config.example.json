@@ -1,0 +1,25 @@
+{
+  "models_dir": "models",
+  "host": "127.0.0.1",
+  "port": 1234,
+  "api_key": "",
+  "allowed_hosts": [],
+  "max_queue": 64,
+  "default_ctx": 8192,
+  "open_engine": true,
+  "browser": "",
+  "timeout_seconds": 1800,
+  "default_sampling": {
+    "temperature": 0.8,
+    "top_k": 40,
+    "top_p": 0.95,
+    "min_p": 0.05,
+    "repeat_penalty": 1.1
+  },
+  "aliases": {
+    "liquid/lfm2.5-1.2b": "lfm2.5-1.2b-instruct",
+    "google/gemma-3-4b": "gemma-3-4b-it",
+    "text-embedding-nomic-embed-text-v1.5": "nomic-embed-text-v1.5"
+  },
+  "model_overrides": {}
+}

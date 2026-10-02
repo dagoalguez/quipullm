@@ -1,0 +1,35 @@
+name: Benchmark report
+description: Measured numbers on your hardware (the most useful contribution right now)
+labels: [benchmark-report]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Only measured numbers, please. Run `python tools/bench.py --url http://localhost:1234 --model <id> --runs 3`.
+        A comparison with LM Studio or llama.cpp on the same machine is very welcome.
+  - type: input
+    id: hw
+    attributes:
+      label: CPU / GPU / RAM
+    validations: { required: true }
+  - type: input
+    id: sw
+    attributes:
+      label: OS, GPU driver, browser version
+    validations: { required: true }
+  - type: input
+    id: model
+    attributes:
+      label: Model file and quantization
+    validations: { required: true }
+  - type: textarea
+    id: out
+    attributes:
+      label: tools/bench.py output
+      render: text
+    validations: { required: true }
+  - type: textarea
+    id: ref
+    attributes:
+      label: Reference on the same machine (optional)
+      description: Tool and version (e.g. LM Studio 0.4.25, llama.cpp build), backend (CPU, Vulkan, CUDA, Metal) and its numbers.

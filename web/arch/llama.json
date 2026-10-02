@@ -1,0 +1,13 @@
+{
+  "id": "llama",
+  "version": 1,
+  "arch": [
+    "llama"
+  ],
+  "base": "transformer",
+  "description": "Llama 2/3, Mistral, Mistral-Nemo y compatibles",
+  "options": {
+    "rope": "norm"
+  },
+  "fallback_template": "llama"
+}

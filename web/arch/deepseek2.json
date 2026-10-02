@@ -1,0 +1,10 @@
+{
+  "id": "deepseek2",
+  "version": 1,
+  "arch": [
+    "deepseek2"
+  ],
+  "base": "deepseek2",
+  "description": "DeepSeek-V2 / Coder-V2 Lite (MLA + MoE)",
+  "fallback_template": "deepseek2"
+}
