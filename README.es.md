@@ -199,3 +199,10 @@ Apache License 2.0, ver [LICENSE](LICENSE) y [NOTICE](NOTICE). Los archivos de m
 licencia. El motor es una implementación independiente del formato GGUF y de las arquitecturas de modelos; se valida contra
 [llama.cpp](https://github.com/ggml-org/llama.cpp) (MIT) y el paquete `gguf` de Python solo se usa en las pruebas de desarrollo.
 Este proyecto no está afiliado a LM Studio, llama.cpp ni a ningún proveedor de modelos.
+
+**Modelos usados en las pruebas y los benchmarks.** No se distribuyen aquí y cada uno conserva su propia licencia y términos (ver su ficha de modelo; revísalos antes de usar un modelo en tu proyecto). Gracias a los equipos que los hicieron:
+LFM2 / LFM2.5 / LFM2.5-VL (Liquid AI), Gemma 3 (Google), Qwen2.5-Coder (equipo Qwen, Alibaba Cloud), DeepSeek-R1-Distill-Qwen y DeepSeek-Coder-V2-Lite (DeepSeek), Granite 3.2 (IBM),
+Mistral-Nemo-Instruct-2407 (Mistral AI y NVIDIA) y nomic-embed-text-v1.5 (Nomic AI). Los archivos GGUF fueron conversiones de terceros; los nombres de modelos son marcas de sus dueños.
+Gracias también a quienes mantienen llama.cpp / ggml y `gguf`, cuya implementación de referencia hizo posible validar número por número, y a LM Studio, usado como referencia de velocidad.
+
+El código se escribió con la ayuda de Claude (Anthropic) como socio técnico; el autor revisa y es responsable de lo que se publica.

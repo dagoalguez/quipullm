@@ -200,3 +200,10 @@ Apache License 2.0, see [LICENSE](LICENSE) and [NOTICE](NOTICE). Model files are
 The engine is an independent implementation of the GGUF format and of the model architectures; it is validated against
 [llama.cpp](https://github.com/ggml-org/llama.cpp) (MIT) and uses the `gguf` Python package only in the development tests.
 This project is not affiliated with LM Studio, llama.cpp, or any model vendor.
+
+**Models used in the tests and benchmarks.** They are not distributed here, and each one keeps its own license and terms (see its model card; check them before using a model in your own project). Thanks to the teams behind them:
+LFM2 / LFM2.5 / LFM2.5-VL (Liquid AI), Gemma 3 (Google), Qwen2.5-Coder (Qwen team, Alibaba Cloud), DeepSeek-R1-Distill-Qwen and DeepSeek-Coder-V2-Lite (DeepSeek), Granite 3.2 (IBM),
+Mistral-Nemo-Instruct-2407 (Mistral AI and NVIDIA) and nomic-embed-text-v1.5 (Nomic AI). The GGUF files were third-party conversions; model names are trademarks of their owners.
+Thanks also to the llama.cpp / ggml and `gguf` maintainers, whose reference implementation made number-by-number validation possible, and to LM Studio, used as the speed reference.
+
+The code was written with the help of Claude (Anthropic) as a technical partner; the author reviews and is responsible for what is published.

@@ -6,3 +6,5 @@ It reads the GGUF file format and is validated against llama.cpp (https://github
 and the `gguf` Python package; no llama.cpp source code is included. Model files are not distributed with this project
 and remain under their own licenses.
 LM Studio, llama.cpp, OpenAI and model names are trademarks of their respective owners; this project is not affiliated with them.
+Models used in tests and benchmarks (not distributed; each keeps its own license): Liquid AI LFM2/LFM2.5/LFM2.5-VL, Google Gemma 3, Qwen2.5-Coder (Alibaba Cloud),
+DeepSeek-R1-Distill-Qwen and DeepSeek-Coder-V2-Lite, IBM Granite 3.2, Mistral-Nemo-Instruct-2407, Nomic nomic-embed-text-v1.5.
