@@ -315,8 +315,11 @@ def main():
     envoltorio = ("import faulthandler, runpy, sys; faulthandler.dump_traceback_later(20); "
                   "import os; sys.argv = sys.argv[1:]; sys.path.insert(0, os.path.dirname(os.path.abspath(sys.argv[0]))); "
                   "runpy.run_path(sys.argv[0], run_name='__main__')")
+    # Output goes to a file, not a pipe: nobody reads a pipe while the tests run, and when it fills up (small on Windows) the server blocks on its own log.
+    ruta_salida = os.path.join(tmp, "server_output.log")
+    salida_srv = open(ruta_salida, "wb")
     srv = subprocess.Popen([sys.executable, "-c", envoltorio, os.path.join(AQUI, "server.py"), "--no-engine", "--port", str(puerto), "--host", "0.0.0.0",
-                            "--models-dir", carpeta, "--config", os.path.join(tmp, "config_prueba.json")], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                            "--models-dir", carpeta, "--config", os.path.join(tmp, "config_prueba.json")], stdout=salida_srv, stderr=subprocess.STDOUT)
     c = Cliente(base)
     for _ in range(50):
         try:
@@ -459,6 +462,10 @@ def main():
         cod, r, _ = c.pedir("/v1/chat/completions", {"model": "lfm2-1.2b-rag", "messages": [{"role": "user", "content": "hola"}],
                                                      "stop": [". FIN"]})
         check("stop recorta el texto", r["choices"][0]["message"]["content"] == "Hola, soy el motor simulado", r)
+        for _ in range(50):                      # the engine learns about the cancel in the reply to its next event
+            if motor.recibidos[-1]["id"] in motor.cancelados:
+                break
+            time.sleep(0.1)
         check("stop avisa al motor que cancele", motor.recibidos[-1]["id"] in motor.cancelados)
 
         cod, r, _ = c.pedir("/v1/chat/completions", {"model": "lfm2-1.2b-rag", "messages": [{"role": "user", "content": "hola"}],
@@ -956,8 +963,14 @@ def main():
             motor.activo = False
         srv.terminate()
         try:
-            salida = srv.communicate(timeout=5)[0].decode("utf-8", "replace")
+            srv.wait(timeout=5)
         except Exception:
+            srv.kill()
+        salida_srv.close()
+        try:
+            with open(ruta_salida, "rb") as f:
+                salida = f.read().decode("utf-8", "replace")
+        except OSError:
             salida = ""
         shutil.rmtree(tmp, ignore_errors=True)
     resiliencia()
