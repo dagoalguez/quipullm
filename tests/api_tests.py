@@ -213,8 +213,8 @@ class MotorFalso(threading.Thread):
             if mt > 0 and n >= mt:
                 razon = "length"
                 break
-            if "LENTO" in prompt:
-                time.sleep(0.15)
+            if "LENTO" in prompt or "GOTEO" in prompt:      # GOTEO: the normal reply, one token at a time (lets the server notice a stop before the engine finishes)
+                time.sleep(0.15 if "LENTO" in prompt else 0.1)
             r = self.post("/engine/api/event", {"tipo": "token", "id": jid, "texto": p, "n": 1})
             n += 1
             if r.get("cancelar"):
@@ -459,7 +459,7 @@ def main():
         check("razonamiento separado en reasoning_content (como LM Studio)",
               m.get("reasoning_content") == "Voy a razonar" and m["content"] == "Respuesta final.", m)
 
-        cod, r, _ = c.pedir("/v1/chat/completions", {"model": "lfm2-1.2b-rag", "messages": [{"role": "user", "content": "hola"}],
+        cod, r, _ = c.pedir("/v1/chat/completions", {"model": "lfm2-1.2b-rag", "messages": [{"role": "user", "content": "hola GOTEO"}],
                                                      "stop": [". FIN"]})
         check("stop recorta el texto", r["choices"][0]["message"]["content"] == "Hola, soy el motor simulado", r)
         for _ in range(50):                      # the engine learns about the cancel in the reply to its next event

@@ -1,464 +1,106 @@
-﻿api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	´╗┐2026-10-03T21:47:27.4169926Z ##[group]Run python tests/run_all.py
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:27.4170649Z ^[[36;1mpython tests/run_all.py^[[0m
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:27.4237641Z shell: /usr/bin/bash -e {0}
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:27.4237912Z env:
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:27.4238187Z   pythonLocation: /opt/hostedtoolcache/Python/3.9.25/x64
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:27.4238635Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib/pkgconfig
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:27.4239064Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:27.4239451Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:27.4239836Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:27.4240847Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:27.4241188Z ##[endgroup]
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:27.4539150Z 
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:27.4539823Z === API ===
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2778445Z    218 pruebas OK, 1 fallas
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2779023Z s not reopen with a recent signal
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2779681Z   OK    watchdog: reopens once with pending requests + silent engine
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2780781Z   OK    watchdog: does not repeat before the retry interval
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2781403Z   OK    watchdog: retries after the interval
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2781930Z   OK    watchdog: does not reopen while a job is active
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2782695Z   OK    handle_error: ConnectionAbortedError -> one line, no traceback
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2783454Z   OK    handle_error: ValueError still shows a traceback
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2784188Z   OK    browser (Linux): picks a Chromium-based browser found on PATH
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2785111Z   OK    browser (Linux): returns None when there is none (falls back to the default browser)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2785853Z   OK    browser: config 'browser' takes priority
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2786366Z   OK    engine.js: AbortController and 35000 ms cutoff
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2786974Z   OK    engine.js VERSION_MOTOR equals the server VERSION
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2787372Z 
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2787534Z 218 pruebas OK, 1 fallas
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2787794Z 
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2787952Z --- log del servidor ---
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2788565Z 2026-10-03 21:47:33 INFO Request t812f90992f44 finished: 153+22 tokens, 12.5 tok/s
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2789612Z 2026-10-03 21:47:33 INFO Request t3c5e1c672d7c from 127.0.0.1 -> tpl-qwen (chat, 156 prompt characters)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2791041Z 2026-10-03 21:47:33 INFO Request t3c5e1c672d7c finished: 156+23 tokens, 12.5 tok/s
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2792164Z 2026-10-03 21:47:33 INFO Request t486d0c6c74ff from 127.0.0.1 -> granite-3.2-8b-instruct (chat, 288 prompt characters)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2793274Z 2026-10-03 21:47:33 INFO Request t486d0c6c74ff finished: 288+42 tokens, 12.5 tok/s
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2794378Z 2026-10-03 21:47:33 INFO Request t586640dd8852 from 127.0.0.1 -> mistral-nemo-instruct-2407 (chat, 29 prompt characters)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2795434Z 2026-10-03 21:47:33 INFO Request t586640dd8852 finished: 29+5 tokens, 12.5 tok/s
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2796443Z 2026-10-03 21:47:33 INFO Request t71d752baa7b1 from 127.0.0.1 -> gemma-3-4b-it (chat, 152 prompt characters)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2797475Z 2026-10-03 21:47:33 INFO Request t71d752baa7b1 finished: 152+22 tokens, 12.5 tok/s
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2798514Z 2026-10-03 21:47:33 INFO Request t4514a02ebafd from 127.0.0.1 -> tpl-mistral (chat, 51 prompt characters)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2799549Z 2026-10-03 21:47:33 INFO Request t4514a02ebafd finished: 51+8 tokens, 12.5 tok/s
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2800675Z 2026-10-03 21:47:33 INFO Settings changed from the panel: kv_max_mb
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2801407Z 2026-10-03 21:47:33 INFO Settings changed from the panel: kv_max_mb
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2802476Z 2026-10-03 21:47:33 INFO Request t0cabd39a0939 from 127.0.0.1 -> deepseek-coder-v2-lite-instruct (chat, 100 prompt characters)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2803658Z 2026-10-03 21:47:33 INFO Request t0cabd39a0939 finished: 100+15 tokens, 12.5 tok/s
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2804514Z 2026-10-03 21:47:34 INFO Models found: 16 (supported in this version: 15)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2806030Z 2026-10-03 21:47:34 INFO Settings changed from the panel: default_ctx, default_sampling, timeout_seconds
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2807050Z 2026-10-03 21:47:34 INFO Models found: 0 (supported in this version: 0)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2807822Z 2026-10-03 21:47:34 INFO Settings changed from the panel: models_dir
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2808603Z 2026-10-03 21:47:34 INFO Models found: 16 (supported in this version: 15)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2809413Z 2026-10-03 21:47:34 INFO Settings changed from the panel: models_dir, port
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2810741Z 2026-10-03 21:47:34 INFO Settings changed from the panel: gpu_memory_gb
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2811598Z 2026-10-03 21:47:34 INFO Settings changed from the panel: memory_check
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2812742Z 2026-10-03 21:47:34 INFO Settings changed from the panel: gpu_memory_gb, memory_check
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2813607Z 2026-10-03 21:47:34 INFO Settings changed from the panel: api_key
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2814567Z 2026-10-03 21:47:34 INFO Request tfd64da05af40 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 54 prompt characters)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2815611Z 2026-10-03 21:47:34 INFO Request tfd64da05af40 finished: 54+4 tokens, 12.5 tok/s
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2816415Z 2026-10-03 21:47:34 INFO Settings changed from the panel: api_key
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2817150Z 2026-10-03 21:47:34 INFO Settings changed from the panel: max_queue
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2818118Z 2026-10-03 21:47:34 INFO Request t2492a2e50fd4 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 57 prompt characters)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2819321Z 2026-10-03 21:47:34 INFO Request tafb65d36c4e6 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 57 prompt characters)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2820680Z 2026-10-03 21:47:35 INFO Request t2492a2e50fd4 finished: 57+6 tokens, 12.5 tok/s
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2821664Z 2026-10-03 21:47:35 INFO Request tafb65d36c4e6 finished: 57+6 tokens, 12.5 tok/s
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2822492Z 2026-10-03 21:47:35 INFO Settings changed from the panel: max_queue
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2823293Z 2026-10-03 21:47:35 INFO Models found: 17 (supported in this version: 15)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2824623Z 2026-10-03 21:47:35 WARNING Architecture manifest zz_malo.json ignored: Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2825948Z 2026-10-03 21:47:35 INFO Models found: 17 (supported in this version: 16)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2826944Z 2026-10-03 21:47:35 INFO Request t4e60df85d256 from 127.0.0.1 -> zz-test (chat, 58 prompt characters)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2827952Z 2026-10-03 21:47:35 INFO Request t4e60df85d256 finished: 58+9 tokens, 12.5 tok/s
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2829294Z 2026-10-03 21:47:35 WARNING Architecture manifest zz_malo.json ignored: Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2831366Z 2026-10-03 21:47:35 WARNING Architecture manifest zz_prueba.json ignored: unknown 'base': no_existe (valid: bert, deepseek2, lfm2, transformer)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2832661Z 2026-10-03 21:47:35 INFO Models found: 17 (supported in this version: 15)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2833931Z 2026-10-03 21:47:36 WARNING Architecture manifest zz_malo.json ignored: Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2835504Z 2026-10-03 21:47:36 WARNING Architecture manifest zz_prueba.json ignored: module web/arch/no_existe.js does not exist
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2836637Z 2026-10-03 21:47:36 INFO Models found: 17 (supported in this version: 15)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2837957Z 2026-10-03 21:47:36 WARNING Architecture manifest zz_malo.json ignored: Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2839612Z 2026-10-03 21:47:36 WARNING Architecture manifest zz_prueba.json ignored: 'module' must be a .js file name inside web/arch/
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2841034Z 2026-10-03 21:47:36 INFO Models found: 17 (supported in this version: 15)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2841863Z 2026-10-03 21:47:36 INFO Models found: 16 (supported in this version: 15)
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2843266Z 2026-10-03 21:47:36 WARNING Rejected OPTIONS /api/config from 127.0.0.1: Request rejected: it comes from another web page (origin https://sitio-ajeno.example).
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2845443Z 2026-10-03 21:47:36 WARNING Rejected GET /api/folders from 127.0.0.1: Request rejected: it comes from another web page (origin https://sitio-ajeno.example).
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2847381Z 2026-10-03 21:47:36 WARNING Rejected POST /api/config from 127.0.0.1: Request rejected: it comes from another web page (origin https://sitio-ajeno.example).
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2849130Z 2026-10-03 21:47:36 WARNING Rejected POST /api/config from 127.0.0.1: Request rejected: it comes from another web page (origin cross-site).
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2850640Z 2026-10-03 21:47:36 INFO Settings changed from the panel: default_ctx
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2852117Z 2026-10-03 21:47:36 WARNING Rejected POST /api/load from 127.0.0.1: Request rejected: it comes from another web page (origin cross-site).
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2853734Z 2026-10-03 21:47:36 WARNING Rejected GET /engine/api/next from 127.0.0.1: Request rejected: it comes from another web page (origin cross-site).
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2855578Z 2026-10-03 21:47:36 WARNING Rejected POST /engine/api/event from 127.0.0.1: Request rejected: it comes from another web page (origin https://sitio-ajeno.example).
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2857373Z 2026-10-03 21:47:36 WARNING Rejected GET /web/js/engine.js from 127.0.0.1: Request rejected: it comes from another web page (origin cross-site).
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2859249Z 2026-10-03 21:47:36 WARNING Rejected GET /v1/models from 127.0.0.1: Host not allowed: atacante.example:46619. If you use a proxy or a custom name, add it to 'allowed_hosts' in config.json.
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2860705Z 
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2860737Z 
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2860884Z Fallaron:
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2861256Z   - stop avisa al motor que cancele
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2862033Z Requests are waiting and the engine has been silent for 30 s: reopening the engine window.
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2863141Z Requests are waiting and the engine has been silent for 125 s: reopening the engine window.
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2863819Z 
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2864282Z    FALL├ô en 9 s
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2864553Z 
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.2864704Z === bench ===
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.4205353Z    bench: 0 fallas
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.4205823Z    OK en 0 s
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.4206023Z 
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.4206198Z ================ RESUMEN ================
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.4206929Z   API (modelos y motor simulados)                                FALL├ô
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.4207402Z   bench.py (servidor simulado)                                   OK
-api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:36.4257362Z ##[error]Process completed with exit code 1.
-api-tests (windows-latest, 3.9)	API tests (standard library only)	´╗┐2026-10-03T21:47:17.8745916Z ##[group]Run python tests/run_all.py
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:17.8746235Z ^[[36;1mpython tests/run_all.py^[[0m
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:17.8805012Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:17.8805305Z env:
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:17.8805529Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.9.13\x64
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:17.8805879Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.9.13\x64/lib/pkgconfig
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:17.8806214Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.9.13\x64
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:17.8806549Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.9.13\x64
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:17.8806845Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.9.13\x64
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:17.8807089Z ##[endgroup]
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:18.1442463Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:47:18.1443642Z === API ===
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9618255Z    87 pruebas OK, 1 fallas
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9618995Z do (pixtral)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9620281Z   OK    400 imagen a un modelo sin mmproj
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9620805Z   OK    400 sin 'messages'
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9621740Z   OK    400 JSON inv´┐¢lido
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9622081Z   OK    404 ruta desconocida
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9622411Z   OK    OPTIONS (CORS) 204
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9622652Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9622796Z == Chat normal
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9623420Z   OK    200 chat
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9623711Z   OK    content correcto
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9624068Z   OK    forma OpenAI: id, object, model, usage
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9624497Z   OK    finish_reason stop
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9625294Z   OK    par´┐¢metros al motor: temperature 0, max_tokens 100, top_k por defecto 40
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9626392Z   OK    el motor recibe URL de metadatos y archivo
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9627625Z   OK    plantilla ChatML de LFM2 exacta (sin razonamiento previo, content en partes)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9628241Z   OK    respuesta usa el nombre pedido
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9628748Z   OK    razonamiento separado en reasoning_content (como LM Studio)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9629267Z   OK    stop recorta el texto
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9629639Z   OK    stop avisa al motor que cancele
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9630045Z   OK    max_tokens -> finish_reason length
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9630460Z   OK    error del motor -> 500 con mensaje
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9630853Z   OK    json_schema aceptado
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9631109Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9631266Z == Streaming (SSE)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9631590Z   OK    Content-Type text/event-stream
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9631998Z   OK    texto reconstruido desde delta.content
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9632456Z   OK    primer delta trae role assistant
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9633054Z   OK    ´┐¢ltimo chunk: delta vac´┐¢o, finish_reason y usage
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9633520Z   OK    termina en data: [DONE]
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9633972Z   OK    chunks con object chat.completion.chunk e id constante
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9634635Z   OK    stream: razonamiento en delta.reasoning_content, respuesta en delta.content
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9635256Z   OK    stream con stop (stop partido entre tokens)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9635749Z   OK    stream con error antes de empezar -> JSON de error
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9636103Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9636253Z == /v1/completions
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9638329Z   OK    completion devuelve texto crudo
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9639187Z   OK    completion: el prompt llega sin plantilla
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9639821Z   FALLA uncaught exception in the suite  -> e 270, in stream
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9641192Z     with urllib.request.urlopen(req, timeout=timeout) as r:
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9649758Z   File "C:\hostedtoolcache\windows\Python\3.9.13\x64\lib\urllib\request.py", line 214, in urlopen
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9650804Z     return opener.open(url, data, timeout)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9652552Z   File "C:\hostedtoolcache\windows\Python\3.9.13\x64\lib\urllib\request.py", line 517, in open
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9653310Z     response = self._open(req, data)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9653995Z   File "C:\hostedtoolcache\windows\Python\3.9.13\x
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9654352Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9657591Z == resilience ==
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9658137Z   OK    watchdog: does not reopen with no waiting requests
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9658677Z   OK    watchdog: does not reopen with a recent signal
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9659220Z   OK    watchdog: reopens once with pending requests + silent engine
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9659787Z   OK    watchdog: does not repeat before the retry interval
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9660255Z   OK    watchdog: retries after the interval
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9660734Z   OK    watchdog: does not reopen while a job is active
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9661294Z   OK    handle_error: ConnectionAbortedError -> one line, no traceback
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9661871Z   OK    handle_error: ValueError still shows a traceback
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9662442Z   OK    browser (Linux): picks a Chromium-based browser found on PATH
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9663130Z   OK    browser (Linux): returns None when there is none (falls back to the default browser)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9663759Z   OK    browser: config 'browser' takes priority
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9664221Z   OK    engine.js: AbortController and 35000 ms cutoff
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9669711Z   OK    engine.js VERSION_MOTOR equals the server VERSION
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9670797Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9671200Z 87 pruebas OK, 1 fallas
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9673466Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9679356Z --- log del servidor ---
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9679888Z 2026-10-03 21:47:18 INFO Models found: 16 (supported in this version: 15)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9680339Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9680610Z 2026-10-03 21:47:18 INFO quipullm v4.0.1 listening on 0.0.0.0:62216
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9681003Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9681267Z 2026-10-03 21:47:18 INFO   Reachable at: http://10.1.0.104:62216
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9681647Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9681907Z 2026-10-03 21:47:18 INFO   Reachable at: http://172.31.176.1:62216
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9682282Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9682583Z 2026-10-03 21:47:18 INFO   By name:      http://runnervmfi6oq:62216/
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9682983Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9683490Z 2026-10-03 21:47:18 WARNING   The API is open to the whole network WITHOUT a key. Set api_key or LLM_API_KEY (see SECURITY.md).
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9684139Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9684383Z 2026-10-03 21:47:18 INFO   Panel:        http://localhost:62216/
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9685001Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9685245Z 2026-10-03 21:47:18 INFO Engine connected: GPU simulada
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9685580Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9686013Z 2026-10-03 21:47:19 INFO Request tb8104e8f4e82 from 127.0.0.1 -> nomic-embed-text-v1.5 (embeddings: 3 texts)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9686616Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9686926Z 2026-10-03 21:47:19 INFO Request tb8104e8f4e82 finished: 12+0 tokens, None tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9687369Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9687782Z 2026-10-03 21:47:19 INFO Request ta7db00b7a406 from 127.0.0.1 -> nomic-embed-text-v1.5 (embeddings: 1 texts)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9688336Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9688633Z 2026-10-03 21:47:19 INFO Request ta7db00b7a406 finished: 4+0 tokens, None tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9689056Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9689453Z 2026-10-03 21:47:19 INFO Request t72902fe05697 from 127.0.0.1 -> nomic-embed-text-v1.5 (embeddings: 1 texts)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9690005Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9690284Z 2026-10-03 21:47:19 INFO Request t72902fe05697 finished: 4+0 tokens, None tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9690708Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9691296Z 2026-10-03 21:47:19 INFO Request t7e234bb21229 from 127.0.0.1 -> nomic-embed-text-v1.5 (embeddings: 1 texts)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9692780Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9693086Z 2026-10-03 21:47:19 INFO Request t7e234bb21229 finished: 3+0 tokens, None tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9693506Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9693928Z 2026-10-03 21:47:19 INFO Request tbcb214290beb from 127.0.0.1 -> nomic-embed-text-v1.5 (embeddings: 2 texts)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9694493Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9694906Z 2026-10-03 21:47:19 INFO Request tb9a0a4aa553b from 127.0.0.1 -> lfm2.5-vl-1.6b (chat, 64 prompt characters)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9695440Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9696277Z 2026-10-03 21:47:19 INFO Request tb9a0a4aa553b finished: 64+8 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9696719Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9697140Z 2026-10-03 21:47:19 INFO Request ta8f85f4a7f62 from 127.0.0.1 -> gemma-3-4b-it (chat, 74 prompt characters)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9697673Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9697970Z 2026-10-03 21:47:19 INFO Request ta8f85f4a7f62 finished: 74+8 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9698394Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9698781Z 2026-10-03 21:47:19 INFO Request tc5e4265f24ff from 127.0.0.1 -> lfm2-1.2b-rag (chat, 54 prompt characters)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9699320Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9699606Z 2026-10-03 21:47:19 INFO Request tc5e4265f24ff finished: 54+8 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9700031Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9700481Z 2026-10-03 21:47:19 INFO Request tb41ebecffbab from 127.0.0.1 -> lfm2.5-1.2b-instruct (chat, 177 prompt characters)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9701063Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9701367Z 2026-10-03 21:47:19 INFO Request tb41ebecffbab finished: 177+26 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9701893Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9702322Z 2026-10-03 21:47:19 INFO Request teaa1171438ff from 127.0.0.1 -> lfm2.5-1.2b-thinking (chat, 56 prompt characters)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9702899Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9703194Z 2026-10-03 21:47:19 INFO Request teaa1171438ff finished: 56+9 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9704026Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9704439Z 2026-10-03 21:47:19 INFO Request td215cbdb1fdb from 127.0.0.1 -> lfm2-1.2b-rag (chat, 54 prompt characters)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9705183Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9705483Z 2026-10-03 21:47:19 INFO Request td215cbdb1fdb finished: 54+8 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9705921Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9706321Z 2026-10-03 21:47:19 INFO Request te622bd40f2b3 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 54 prompt characters)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9706922Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9707206Z 2026-10-03 21:47:19 INFO Request te622bd40f2b3 finished: 54+3 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9707624Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9708024Z 2026-10-03 21:47:19 INFO Request tf9d19b68019b from 127.0.0.1 -> lfm2-1.2b-rag (chat, 55 prompt characters)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9708563Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9708959Z 2026-10-03 21:47:19 INFO Request t15aea963f45d from 127.0.0.1 -> lfm2-1.2b-rag (chat, 51 prompt characters)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9709488Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9709764Z 2026-10-03 21:47:19 INFO Request t15aea963f45d finished: 51+8 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9710185Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9710629Z 2026-10-03 21:47:19 INFO Request td9055448d078 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 54 prompt characters, stream)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9711247Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9711543Z 2026-10-03 21:47:19 INFO Request td9055448d078 finished: 54+8 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9712027Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9712515Z 2026-10-03 21:47:19 INFO Request t8cff0226cc4b from 127.0.0.1 -> lfm2.5-1.2b-thinking (chat, 56 prompt characters, stream)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9713164Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9713453Z 2026-10-03 21:47:19 INFO Request t8cff0226cc4b finished: 56+9 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9713879Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9714315Z 2026-10-03 21:47:19 INFO Request t4f7709fa42c4 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 54 prompt characters, stream)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9714906Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9715924Z 2026-10-03 21:47:19 INFO Request t4f7709fa42c4 finished: 54+0 tokens, None tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9716523Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9716951Z 2026-10-03 21:47:19 INFO Request t4594e1780f0d from 127.0.0.1 -> lfm2-1.2b-rag (chat, 55 prompt characters, stream)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9717727Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9718167Z 2026-10-03 21:47:19 INFO Request t14745cdf474d from 127.0.0.1 -> lfm2-350m-math (completion, 28 prompt characters)
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9718733Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9719027Z 2026-10-03 21:47:19 INFO Request t14745cdf474d finished: 28+4 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9719452Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9719517Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9719581Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9719723Z Fallaron:
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9720045Z   - uncaught exception in the suite
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9720767Z Requests are waiting and the engine has been silent for 30 s: reopening the engine window.
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9721569Z Requests are waiting and the engine has been silent for 125 s: reopening the engine window.
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9722080Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9722367Z    FALL´┐¢ en 62 s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9722588Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:19.9722738Z === bench ===
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:22.1678653Z    bench: 0 fallas
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:22.1678932Z    OK en 2 s
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:22.1679124Z 
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:22.1679222Z ================ RESUMEN ================
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:22.1680285Z   API (modelos y motor simulados)                                FALL´┐¢
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:22.1680846Z   bench.py (servidor simulado)                                   OK
-api-tests (windows-latest, 3.9)	API tests (standard library only)	2026-10-03T21:48:22.2691478Z ##[error]Process completed with exit code 1.
-api-tests (windows-latest, 3.12)	API tests (standard library only)	´╗┐2026-10-03T21:46:31.0904448Z ##[group]Run python tests/run_all.py
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:46:31.0904843Z ^[[36;1mpython tests/run_all.py^[[0m
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:46:31.0953590Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:46:31.0953812Z env:
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:46:31.0953966Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:46:31.0954213Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:46:31.0954463Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:46:31.0954679Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:46:31.0954888Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:46:31.0955060Z ##[endgroup]
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:46:31.3176585Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:46:31.3179945Z === API ===
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5006838Z    87 pruebas OK, 1 fallas
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5007294Z do (pixtral)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5007488Z   OK    400 imagen a un modelo sin mmproj
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5007824Z   OK    400 sin 'messages'
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5008597Z   OK    400 JSON inv´┐¢lido
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5008800Z   OK    404 ruta desconocida
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5009023Z   OK    OPTIONS (CORS) 204
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5009144Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5009215Z == Chat normal
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5009370Z   OK    200 chat
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5009535Z   OK    content correcto
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5009757Z   OK    forma OpenAI: id, object, model, usage
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5010008Z   OK    finish_reason stop
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5010428Z   OK    par´┐¢metros al motor: temperature 0, max_tokens 100, top_k por defecto 40
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5010827Z   OK    el motor recibe URL de metadatos y archivo
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5011200Z   OK    plantilla ChatML de LFM2 exacta (sin razonamiento previo, content en partes)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5011550Z   OK    respuesta usa el nombre pedido
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5011842Z   OK    razonamiento separado en reasoning_content (como LM Studio)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5012143Z   OK    stop recorta el texto
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5012356Z   OK    stop avisa al motor que cancele
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5012602Z   OK    max_tokens -> finish_reason length
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5012865Z   OK    error del motor -> 500 con mensaje
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5013089Z   OK    json_schema aceptado
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5013226Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5013302Z == Streaming (SSE)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5013488Z   OK    Content-Type text/event-stream
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5013746Z   OK    texto reconstruido desde delta.content
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5014008Z   OK    primer delta trae role assistant
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5014353Z   OK    ´┐¢ltimo chunk: delta vac´┐¢o, finish_reason y usage
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5014626Z   OK    termina en data: [DONE]
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5014889Z   OK    chunks con object chat.completion.chunk e id constante
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5015299Z   OK    stream: razonamiento en delta.reasoning_content, respuesta en delta.content
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5015670Z   OK    stream con stop (stop partido entre tokens)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5015999Z   OK    stream con error antes de empezar -> JSON de error
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5016206Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5016834Z == /v1/completions
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5017045Z   OK    completion devuelve texto crudo
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5017352Z   OK    completion: el prompt llega sin plantilla
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5017632Z   FALLA uncaught exception in the suite  -> 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5017866Z                ^^^^^^^^^^^^^^^^^^^^^
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5024582Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\urllib\request.py", line 532, in _open
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5024978Z     result = self._call_chain(self.handle_open, protocol, protocol +
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5025194Z              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5025508Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\urllib\request.py", line 492, in _call_chain
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5025768Z     result = func(*args)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5027888Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5027960Z == resilience ==
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5028187Z   OK    watchdog: does not reopen with no waiting requests
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5028497Z   OK    watchdog: does not reopen with a recent signal
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5028817Z   OK    watchdog: reopens once with pending requests + silent engine
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5029158Z   OK    watchdog: does not repeat before the retry interval
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5029454Z   OK    watchdog: retries after the interval
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5029731Z   OK    watchdog: does not reopen while a job is active
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5030082Z   OK    handle_error: ConnectionAbortedError -> one line, no traceback
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5030388Z   OK    handle_error: ValueError still shows a traceback
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5030608Z   OK    browser (Linux): picks a Chromium-based browser found on PATH
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5030894Z   OK    browser (Linux): returns None when there is none (falls back to the default browser)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5031144Z   OK    browser: config 'browser' takes priority
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5031341Z   OK    engine.js: AbortController and 35000 ms cutoff
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5031554Z   OK    engine.js VERSION_MOTOR equals the server VERSION
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5031678Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5031732Z 87 pruebas OK, 1 fallas
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5031815Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5031872Z --- log del servidor ---
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5032059Z 2026-10-03 21:46:32 INFO Models found: 16 (supported in this version: 15)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5032225Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5032318Z 2026-10-03 21:46:32 INFO quipullm v4.0.1 listening on 0.0.0.0:60614
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5032452Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5032558Z 2026-10-03 21:46:32 INFO   Reachable at: http://10.1.0.101:60614
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5032695Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5032789Z 2026-10-03 21:46:32 INFO   Reachable at: http://172.24.176.1:60614
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5032925Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5033029Z 2026-10-03 21:46:32 INFO   By name:      http://runnervmfi6oq:60614/
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5033181Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5033375Z 2026-10-03 21:46:32 WARNING   The API is open to the whole network WITHOUT a key. Set api_key or LLM_API_KEY (see SECURITY.md).
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5033629Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5033722Z 2026-10-03 21:46:32 INFO   Panel:        http://localhost:60614/
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5033863Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5033941Z 2026-10-03 21:46:32 INFO Engine connected: GPU simulada
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5034088Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5034347Z 2026-10-03 21:46:33 INFO Request tf1b5ed9866d2 from 127.0.0.1 -> nomic-embed-text-v1.5 (embeddings: 3 texts)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5034682Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5034851Z 2026-10-03 21:46:33 INFO Request tf1b5ed9866d2 finished: 12+0 tokens, None tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5035098Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5035343Z 2026-10-03 21:46:33 INFO Request te8ac2f7df975 from 127.0.0.1 -> nomic-embed-text-v1.5 (embeddings: 1 texts)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5035558Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5035660Z 2026-10-03 21:46:33 INFO Request te8ac2f7df975 finished: 4+0 tokens, None tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5035822Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5035974Z 2026-10-03 21:46:33 INFO Request t32a76436bb4a from 127.0.0.1 -> nomic-embed-text-v1.5 (embeddings: 1 texts)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5036350Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5036678Z 2026-10-03 21:46:33 INFO Request t32a76436bb4a finished: 4+0 tokens, None tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5036913Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5037156Z 2026-10-03 21:46:33 INFO Request tcf13decf372c from 127.0.0.1 -> nomic-embed-text-v1.5 (embeddings: 1 texts)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5037501Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5037668Z 2026-10-03 21:46:33 INFO Request tcf13decf372c finished: 3+0 tokens, None tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5037919Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5038170Z 2026-10-03 21:46:33 INFO Request tf506e0443dfb from 127.0.0.1 -> nomic-embed-text-v1.5 (embeddings: 2 texts)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5038524Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5038759Z 2026-10-03 21:46:33 INFO Request t89b305b0e1f4 from 127.0.0.1 -> lfm2.5-vl-1.6b (chat, 64 prompt characters)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5039089Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5039784Z 2026-10-03 21:46:33 INFO Request t89b305b0e1f4 finished: 64+8 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5039937Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5040092Z 2026-10-03 21:46:33 INFO Request tdd75d1c92cfe from 127.0.0.1 -> gemma-3-4b-it (chat, 74 prompt characters)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5040295Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5040400Z 2026-10-03 21:46:33 INFO Request tdd75d1c92cfe finished: 74+8 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5040555Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5040697Z 2026-10-03 21:46:33 INFO Request t031c7071ea11 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 54 prompt characters)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5040901Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5040997Z 2026-10-03 21:46:33 INFO Request t031c7071ea11 finished: 54+8 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5041152Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5041321Z 2026-10-03 21:46:33 INFO Request tfe88fae4b111 from 127.0.0.1 -> lfm2.5-1.2b-instruct (chat, 177 prompt characters)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5041537Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5041649Z 2026-10-03 21:46:33 INFO Request tfe88fae4b111 finished: 177+26 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5041807Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5041969Z 2026-10-03 21:46:33 INFO Request t69c246df0fd6 from 127.0.0.1 -> lfm2.5-1.2b-thinking (chat, 56 prompt characters)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5042187Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5042283Z 2026-10-03 21:46:34 INFO Request t69c246df0fd6 finished: 56+9 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5042438Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5042581Z 2026-10-03 21:46:34 INFO Request ta198b522ca67 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 54 prompt characters)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5042783Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5042878Z 2026-10-03 21:46:34 INFO Request ta198b522ca67 finished: 54+8 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5043032Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5043181Z 2026-10-03 21:46:34 INFO Request t304bda6580aa from 127.0.0.1 -> lfm2-1.2b-rag (chat, 54 prompt characters)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5043378Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5043484Z 2026-10-03 21:46:34 INFO Request t304bda6580aa finished: 54+3 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5043637Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5043780Z 2026-10-03 21:46:34 INFO Request t9b35078bc661 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 55 prompt characters)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5043981Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5044123Z 2026-10-03 21:46:34 INFO Request t5d9c99a593b9 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 51 prompt characters)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5044323Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5044417Z 2026-10-03 21:46:34 INFO Request t5d9c99a593b9 finished: 51+8 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5044574Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5044738Z 2026-10-03 21:46:34 INFO Request t7328f36d36bb from 127.0.0.1 -> lfm2-1.2b-rag (chat, 54 prompt characters, stream)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5044949Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5045050Z 2026-10-03 21:46:34 INFO Request t7328f36d36bb finished: 54+8 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5045199Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5045447Z 2026-10-03 21:46:34 INFO Request td8828e72e831 from 127.0.0.1 -> lfm2.5-1.2b-thinking (chat, 56 prompt characters, stream)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5045814Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5045973Z 2026-10-03 21:46:34 INFO Request td8828e72e831 finished: 56+9 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5046235Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5046492Z 2026-10-03 21:46:34 INFO Request ta07a3978a6f8 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 54 prompt characters, stream)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5047396Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5047574Z 2026-10-03 21:46:34 INFO Request ta07a3978a6f8 finished: 54+0 tokens, None tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5047830Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5048094Z 2026-10-03 21:46:34 INFO Request te3b6ceeeb0db from 127.0.0.1 -> lfm2-1.2b-rag (chat, 55 prompt characters, stream)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5048453Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5048711Z 2026-10-03 21:46:34 INFO Request tbc8e091e606e from 127.0.0.1 -> lfm2-350m-math (completion, 28 prompt characters)
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5049067Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5049231Z 2026-10-03 21:46:34 INFO Request tbc8e091e606e finished: 28+4 tokens, 12.5 tok/s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5049474Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5049478Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5049482Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5049547Z Fallaron:
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5049725Z   - uncaught exception in the suite
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5050207Z Requests are waiting and the engine has been silent for 30 s: reopening the engine window.
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5050719Z Requests are waiting and the engine has been silent for 125 s: reopening the engine window.
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5051025Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5051189Z    FALL´┐¢ en 63 s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5051306Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:34.5051370Z === bench ===
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:36.8002305Z    bench: 0 fallas
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:36.8002626Z    OK en 2 s
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:36.8002738Z 
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:36.8002845Z ================ RESUMEN ================
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:36.8003578Z   API (modelos y motor simulados)                                FALL´┐¢
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:36.8003964Z   bench.py (servidor simulado)                                   OK
-api-tests (windows-latest, 3.12)	API tests (standard library only)	2026-10-03T21:47:36.8649728Z ##[error]Process completed with exit code 1.
+﻿api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	´╗┐2026-10-03T22:19:12.1958679Z ##[group]Run python tests/run_all.py
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:12.1959039Z ^[[36;1mpython tests/run_all.py^[[0m
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:12.2023798Z shell: /usr/bin/bash -e {0}
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:12.2024075Z env:
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:12.2024348Z   pythonLocation: /opt/hostedtoolcache/Python/3.9.25/x64
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:12.2024777Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib/pkgconfig
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:12.2025217Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:12.2025605Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:12.2025990Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:12.2026381Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:12.2026709Z ##[endgroup]
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:12.2300355Z 
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:12.2300744Z === API ===
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9810887Z    218 pruebas OK, 1 fallas
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9811498Z s not reopen with a recent signal
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9812110Z   OK    watchdog: reopens once with pending requests + silent engine
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9812870Z   OK    watchdog: does not repeat before the retry interval
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9813474Z   OK    watchdog: retries after the interval
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9814052Z   OK    watchdog: does not reopen while a job is active
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9814763Z   OK    handle_error: ConnectionAbortedError -> one line, no traceback
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9815516Z   OK    handle_error: ValueError still shows a traceback
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9816244Z   OK    browser (Linux): picks a Chromium-based browser found on PATH
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9817136Z   OK    browser (Linux): returns None when there is none (falls back to the default browser)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9817951Z   OK    browser: config 'browser' takes priority
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9818550Z   OK    engine.js: AbortController and 35000 ms cutoff
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9818939Z   OK    engine.js VERSION_MOTOR equals the server VERSION
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9819173Z 
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9819287Z 218 pruebas OK, 1 fallas
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9819452Z 
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9819552Z --- log del servidor ---
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9819894Z 2026-10-03 22:19:23 INFO Request t3c4287b09c3a finished: 153+22 tokens, 12.5 tok/s
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9820777Z 2026-10-03 22:19:23 INFO Request tf7dfcac1f28d from 127.0.0.1 -> tpl-qwen (chat, 156 prompt characters)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9821468Z 2026-10-03 22:19:23 INFO Request tf7dfcac1f28d finished: 156+23 tokens, 12.5 tok/s
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9822573Z 2026-10-03 22:19:23 INFO Request tbb1ab12953a2 from 127.0.0.1 -> granite-3.2-8b-instruct (chat, 288 prompt characters)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9823212Z 2026-10-03 22:19:23 INFO Request tbb1ab12953a2 finished: 288+42 tokens, 12.5 tok/s
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9823864Z 2026-10-03 22:19:23 INFO Request tcf9cd1dbcc5b from 127.0.0.1 -> mistral-nemo-instruct-2407 (chat, 29 prompt characters)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9824511Z 2026-10-03 22:19:23 INFO Request tcf9cd1dbcc5b finished: 29+5 tokens, 12.5 tok/s
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9825069Z 2026-10-03 22:19:23 INFO Request t713e2e819f53 from 127.0.0.1 -> gemma-3-4b-it (chat, 152 prompt characters)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9825630Z 2026-10-03 22:19:23 INFO Request t713e2e819f53 finished: 152+22 tokens, 12.5 tok/s
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9826174Z 2026-10-03 22:19:23 INFO Request t398b948f5def from 127.0.0.1 -> tpl-mistral (chat, 51 prompt characters)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9826734Z 2026-10-03 22:19:23 INFO Request t398b948f5def finished: 51+8 tokens, 12.5 tok/s
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9827449Z 2026-10-03 22:19:23 INFO Settings changed from the panel: kv_max_mb
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9827856Z 2026-10-03 22:19:23 INFO Settings changed from the panel: kv_max_mb
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9828464Z 2026-10-03 22:19:23 INFO Request ta5a7e84c92b0 from 127.0.0.1 -> deepseek-coder-v2-lite-instruct (chat, 100 prompt characters)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9829100Z 2026-10-03 22:19:23 INFO Request ta5a7e84c92b0 finished: 100+15 tokens, 12.5 tok/s
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9829558Z 2026-10-03 22:19:23 INFO Models found: 16 (supported in this version: 15)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9830617Z 2026-10-03 22:19:23 INFO Settings changed from the panel: default_ctx, default_sampling, timeout_seconds
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9831164Z 2026-10-03 22:19:23 INFO Models found: 0 (supported in this version: 0)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9831588Z 2026-10-03 22:19:23 INFO Settings changed from the panel: models_dir
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9832033Z 2026-10-03 22:19:23 INFO Models found: 16 (supported in this version: 15)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9832474Z 2026-10-03 22:19:23 INFO Settings changed from the panel: models_dir, port
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9832903Z 2026-10-03 22:19:23 INFO Settings changed from the panel: gpu_memory_gb
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9833317Z 2026-10-03 22:19:23 INFO Settings changed from the panel: memory_check
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9833768Z 2026-10-03 22:19:23 INFO Settings changed from the panel: gpu_memory_gb, memory_check
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9834219Z 2026-10-03 22:19:23 INFO Settings changed from the panel: api_key
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9834742Z 2026-10-03 22:19:23 INFO Request t002d42bc15b3 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 54 prompt characters)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9835307Z 2026-10-03 22:19:23 INFO Request t002d42bc15b3 finished: 54+4 tokens, 12.5 tok/s
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9835749Z 2026-10-03 22:19:23 INFO Settings changed from the panel: api_key
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9836139Z 2026-10-03 22:19:23 INFO Settings changed from the panel: max_queue
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9836662Z 2026-10-03 22:19:23 INFO Request t11d3f9bf9a02 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 57 prompt characters)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9837302Z 2026-10-03 22:19:24 INFO Request t31ce13b11457 from 127.0.0.1 -> lfm2-1.2b-rag (chat, 57 prompt characters)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9837853Z 2026-10-03 22:19:24 INFO Request t11d3f9bf9a02 finished: 57+6 tokens, 12.5 tok/s
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9838338Z 2026-10-03 22:19:25 INFO Request t31ce13b11457 finished: 57+6 tokens, 12.5 tok/s
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9838762Z 2026-10-03 22:19:25 INFO Settings changed from the panel: max_queue
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9839176Z 2026-10-03 22:19:25 INFO Models found: 17 (supported in this version: 15)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9839866Z 2026-10-03 22:19:25 WARNING Architecture manifest zz_malo.json ignored: Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9840779Z 2026-10-03 22:19:25 INFO Models found: 17 (supported in this version: 16)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9841307Z 2026-10-03 22:19:25 INFO Request tee23bf09c119 from 127.0.0.1 -> zz-test (chat, 58 prompt characters)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9841849Z 2026-10-03 22:19:25 INFO Request tee23bf09c119 finished: 58+9 tokens, 12.5 tok/s
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9842543Z 2026-10-03 22:19:25 WARNING Architecture manifest zz_malo.json ignored: Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9843446Z 2026-10-03 22:19:25 WARNING Architecture manifest zz_prueba.json ignored: unknown 'base': no_existe (valid: bert, deepseek2, lfm2, transformer)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9844101Z 2026-10-03 22:19:25 INFO Models found: 17 (supported in this version: 15)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9844785Z 2026-10-03 22:19:25 WARNING Architecture manifest zz_malo.json ignored: Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9845630Z 2026-10-03 22:19:25 WARNING Architecture manifest zz_prueba.json ignored: module web/arch/no_existe.js does not exist
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9846209Z 2026-10-03 22:19:25 INFO Models found: 17 (supported in this version: 15)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9847028Z 2026-10-03 22:19:25 WARNING Architecture manifest zz_malo.json ignored: Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9847874Z 2026-10-03 22:19:25 WARNING Architecture manifest zz_prueba.json ignored: 'module' must be a .js file name inside web/arch/
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9848471Z 2026-10-03 22:19:25 INFO Models found: 17 (supported in this version: 15)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9848881Z 2026-10-03 22:19:25 INFO Models found: 16 (supported in this version: 15)
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9849609Z 2026-10-03 22:19:25 WARNING Rejected OPTIONS /api/config from 127.0.0.1: Request rejected: it comes from another web page (origin https://sitio-ajeno.example).
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9851132Z 2026-10-03 22:19:25 WARNING Rejected GET /api/folders from 127.0.0.1: Request rejected: it comes from another web page (origin https://sitio-ajeno.example).
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9852162Z 2026-10-03 22:19:25 WARNING Rejected POST /api/config from 127.0.0.1: Request rejected: it comes from another web page (origin https://sitio-ajeno.example).
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9853073Z 2026-10-03 22:19:25 WARNING Rejected POST /api/config from 127.0.0.1: Request rejected: it comes from another web page (origin cross-site).
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9853734Z 2026-10-03 22:19:25 INFO Settings changed from the panel: default_ctx
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9854373Z 2026-10-03 22:19:25 WARNING Rejected POST /api/load from 127.0.0.1: Request rejected: it comes from another web page (origin cross-site).
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9855229Z 2026-10-03 22:19:25 WARNING Rejected GET /engine/api/next from 127.0.0.1: Request rejected: it comes from another web page (origin cross-site).
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9856187Z 2026-10-03 22:19:25 WARNING Rejected POST /engine/api/event from 127.0.0.1: Request rejected: it comes from another web page (origin https://sitio-ajeno.example).
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9857136Z 2026-10-03 22:19:25 WARNING Rejected GET /web/js/engine.js from 127.0.0.1: Request rejected: it comes from another web page (origin cross-site).
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9858147Z 2026-10-03 22:19:25 WARNING Rejected GET /v1/models from 127.0.0.1: Host not allowed: atacante.example:59277. If you use a proxy or a custom name, add it to 'allowed_hosts' in config.json.
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9858778Z 
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9858784Z 
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9858865Z Fallaron:
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9859073Z   - stop avisa al motor que cancele
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9859489Z Requests are waiting and the engine has been silent for 30 s: reopening the engine window.
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9860332Z Requests are waiting and the engine has been silent for 125 s: reopening the engine window.
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9860695Z 
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9860978Z    FALL├ô en 14 s
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9861122Z 
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:25.9861197Z === bench ===
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:26.1266544Z    bench: 0 fallas
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:26.1266989Z    OK en 0 s
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:26.1267239Z 
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:26.1267532Z ================ RESUMEN ================
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:26.1268366Z   API (modelos y motor simulados)                                FALL├ô
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:26.1268865Z   bench.py (servidor simulado)                                   OK
+api-tests (ubuntu-latest, 3.9)	API tests (standard library only)	2026-10-03T22:19:26.1322018Z ##[error]Process completed with exit code 1.
