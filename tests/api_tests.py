@@ -944,6 +944,9 @@ def main():
         finally:
             srv2.terminate()
             srv2.communicate(timeout=5)
+    except Exception:
+        import traceback
+        check("uncaught exception in the suite", False, traceback.format_exc()[-1500:])
     finally:
         if motor:
             motor.activo = False
@@ -957,7 +960,7 @@ def main():
     print("\n%d pruebas OK, %d fallas" % (OK[0], len(FALLAS)))
     if FALLAS:
         print("Fallaron:", *FALLAS, sep="\n  - ")
-        print("\n--- log del servidor ---\n" + salida[-3000:])
+        print("\n--- log del servidor ---\n" + salida[-6000:])
     return 1 if FALLAS else 0
 
 
