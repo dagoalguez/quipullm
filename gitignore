@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+config.json
+logs/
+.engine_profile/
+tests/conformance/cache/
+*.gguf
+*.tmp
+.DS_Store
+models/
+tools/verificacion_resultado.json
+fallo_ci.txt
+*.log

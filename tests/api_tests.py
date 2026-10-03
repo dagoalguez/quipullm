@@ -311,7 +311,11 @@ def main():
         offsets[os.path.basename(rel)] = escribir_gguf(os.path.join(carpeta, *rel.split("/")), arch)
     puerto = puerto_libre()
     base = "http://127.0.0.1:%d" % puerto
-    srv = subprocess.Popen([sys.executable, os.path.join(AQUI, "server.py"), "--no-engine", "--port", str(puerto), "--host", "0.0.0.0",
+    # The server runs under a tiny wrapper that dumps every thread's stack after 20 s, so that a hang shows up in the failure log.
+    envoltorio = ("import faulthandler, runpy, sys; faulthandler.dump_traceback_later(20); "
+                  "import os; sys.argv = sys.argv[1:]; sys.path.insert(0, os.path.dirname(os.path.abspath(sys.argv[0]))); "
+                  "runpy.run_path(sys.argv[0], run_name='__main__')")
+    srv = subprocess.Popen([sys.executable, "-c", envoltorio, os.path.join(AQUI, "server.py"), "--no-engine", "--port", str(puerto), "--host", "0.0.0.0",
                             "--models-dir", carpeta, "--config", os.path.join(tmp, "config_prueba.json")], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     c = Cliente(base)
     for _ in range(50):
@@ -959,8 +963,8 @@ def main():
     resiliencia()
     print("\n%d pruebas OK, %d fallas" % (OK[0], len(FALLAS)))
     if FALLAS:
-        print("Fallaron:", *FALLAS, sep="\n  - ")
         print("\n--- log del servidor ---\n" + salida[-6000:])
+        print("\nFallaron:", *FALLAS, sep="\n  - ")
     return 1 if FALLAS else 0
 
 

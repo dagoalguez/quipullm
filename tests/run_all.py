@@ -50,7 +50,7 @@ def correr(nombre, args, cwd=None):
     print("   " + (resumen[-1].strip() if resumen else out.strip().splitlines()[-1] if out.strip() else "(sin salida)"))
     ok = (p.returncode == 0)
     if not ok:
-        print(out[-2500:])
+        print(out[-7000:])
     print("   %s en %.0f s" % ("OK" if ok else "FALLÓ", time.time() - t0), flush=True)
     return ok
 
