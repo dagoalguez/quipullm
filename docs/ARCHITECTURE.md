@@ -21,7 +21,7 @@ samples, and posts tokens back.
 
 ## Why the engine lives in a browser tab
 WebGPU gives portable GPU compute with **no native code to install**. The tab is launched by the server (`--app` window with its own profile).
-That is what makes the repository text-only and runnable behind a proxy that blocks binaries. The cost is performance and
+That is what makes the repository text-only, with nothing to install. The cost is performance and
 control (see [LIMITATIONS.md](LIMITATIONS.md)).
 
 ## Components

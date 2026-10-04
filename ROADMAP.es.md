@@ -4,6 +4,10 @@ Esta es una lista de intenciones, **no una promesa ni un calendario**. Los punto
 
 La regla para cada punto es la misma que para el motor actual: está terminado cuando las pruebas de conformidad lo dicen, no cuando la salida «se ve bien» (ver [Cómo se verifica](README.es.md#cómo-se-verifica)).
 
+**Lo que funciona hoy (4.1):** API compatible con OpenAI/LM Studio (chat, streaming, completions, embeddings, visión de dos familias), página de chat integrada, panel de control, `--share` para un equipo pequeño y las arquitecturas del README, todo verificado contra llama.cpp. Esta página trata de lo que viene.
+
+**Hecho recientemente:** página de chat y `--share` (4.1.0).
+
 ## Resumen
 
 | # | Punto | Por qué importa | Esfuerzo | Riesgo | Cómo se verificaría |
@@ -20,7 +24,7 @@ La regla para cada punto es la misma que para el motor actual: está terminado c
 
 ## 1. Modo sin ventana / servicio y arranque en Linux y macOS
 
-**Hoy:** el motor necesita una ventana del navegador abierta en la PC servidora. El servidor busca Edge o Chrome solo en ubicaciones de Windows; en Linux y macOS usa el navegador predeterminado en una pestaña normal, y ese arranque **no se ha probado con una GPU real** allí.
+**Hoy:** el motor necesita una ventana del navegador abierta en la PC servidora. Desde 4.0.1 el servidor busca en Linux un navegador basado en Chromium en el PATH (esa búsqueda no se probó en una máquina Linux real); en macOS usa el navegador predeterminado en una pestaña normal, sin probar. En una Intel HD 4000 con Linux Mint, Chrome solo expuso WebGPU con `--enable-unsafe-webgpu --enable-features=Vulkan --ignore-gpu-blocklist` (qué bandera es la necesaria: sin probar) y Firefox no lo expone por defecto; hoy esas banderas las pone el usuario a mano.
 
 **Qué haríamos:** (a) encontrar Chrome/Chromium/Edge en Linux y macOS y pasarle las banderas que el motor necesita; (b) un modo opcional de arranque oculto o sin ventana para que el servidor corra desatendido; (c) documentación para ejecutarlo como servicio.
 La suite de pruebas ya corre el motor real en Chromium sin ventana con SwiftShader (WebGPU por software), así que ahí el modo sin ventana funciona. Que Chromium sin ventana llegue a una GPU **real** está **sin medir** y es lo primero que hay que averiguar.
@@ -66,6 +70,8 @@ La suite de pruebas ya corre el motor real en Chromium sin ventana con SwiftShad
 ## 6. Huecos de la API
 
 `logprobs` y `n > 1` no están implementados. Como los logits ya están disponibles en JavaScript para el muestreo, `logprobs` debería ser barato; `n > 1` necesita generación repetida en una petición. Se verifica con pruebas de API.
+
+La página `/chat` es pequeña a propósito. Candidatos, todos de bajo riesgo: listas y tablas en el renderizador de Markdown, adjuntar una imagen para modelos de visión, exportar una conversación y (tras el punto 3) conversaciones largas más rápidas. Se verificarían en un navegador real contra un motor simulado.
 
 ## 7. Benchmarks en otro hardware
 

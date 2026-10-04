@@ -4,6 +4,10 @@ This is a list of intentions, **not a promise or a schedule**. Items are ordered
 
 The rule for every item is the same as for the existing engine: it is done when the conformance tests say so, not when the output "looks right" (see [How it is verified](README.md#how-it-is-verified)).
 
+**What works today (4.1):** OpenAI/LM Studio-compatible API (chat, streaming, completions, embeddings, vision for two families), a built-in chat page, a control panel, `--share` for a small team, and the architectures listed in the README, all verified against llama.cpp. This page is about what comes next.
+
+**Recently done:** chat page and `--share` (4.1.0).
+
 ## Summary
 
 | # | Item | Why it matters | Effort | Risk | How it would be verified |
@@ -66,6 +70,8 @@ The test suite already runs the real engine in headless Chromium with SwiftShade
 ## 6. API gaps
 
 `logprobs` and `n > 1` are not implemented. Since the logits are already available in JavaScript for sampling, `logprobs` should be cheap; `n > 1` needs repeated generation in one request. Verified with API tests.
+
+The `/chat` page is deliberately small. Candidates, all low risk: lists and tables in the Markdown renderer, attaching an image for vision models, exporting a conversation, and (after item 3) faster long conversations. They would be checked in a real browser against a simulated engine.
 
 ## 7. Benchmarks on other hardware
 

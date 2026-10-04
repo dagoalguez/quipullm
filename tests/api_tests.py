@@ -803,9 +803,85 @@ def main():
         check("el panel y /api/status siguen abiertos e informan que se exige clave", cod == 200 and st["requires_key"] is True, cod)
         cod, b, _ = c.pedir("/", crudo=True)
         check("el panel (HTML) es accesible sin clave", cod == 200)
+        cod, b, h = c.pedir("/chat", crudo=True)
+        check("la página de chat (/chat) es accesible sin clave y no se puede enmarcar",
+              cod == 200 and b"quipullm" in b and h.get("X-Frame-Options") == "DENY", cod)
+        cod, b, _ = c.pedir("/api/load", {"model": "lfm2-1.2b-rag"})
+        check("cargar un modelo sin la clave -> 401", cod == 401, cod)
         cod, r, _ = c.pedir("/api/config", {"api_key": ""})
         cod, r, _ = c.pedir("/v1/models")
         check("al quitar la clave la API vuelve a estar abierta", cod == 200, cod)
+
+        print("\n== Modelos visibles en el chat y panel solo en la PC servidora")
+        cod, r, _ = c.pedir("/api/config", {"chat_models": ["gemma-3-4b-it", "lfm2-1.2b-rag", "gemma-3-4b-it"]})
+        check("chat_models: se guarda sin duplicados y en orden", cod == 200 and r["config"]["chat_models"] == ["gemma-3-4b-it", "lfm2-1.2b-rag"], r)
+        cod, st, _ = c.pedir("/api/status")
+        check("status publica chat_models", st["chat_models"] == ["gemma-3-4b-it", "lfm2-1.2b-rag"], st.get("chat_models"))
+        cod, r, _ = c.pedir("/api/config", {"chat_models": "no-es-lista"})
+        check("chat_models inválido -> 400", cod == 400, r)
+        cod, r, _ = c.pedir("/api/config", {"chat_models": [1, 2]})
+        check("chat_models con no-cadenas -> 400", cod == 400, r)
+        cod, r, _ = c.pedir("/api/config", {"chat_models": []})
+        cod, st, _ = c.pedir("/api/status")
+        check("chat_models vacío = todos los modelos", cod == 200 and st["chat_models"] == [], st.get("chat_models"))
+        check("la PC servidora ve el panel y los ajustes (panel_allowed)", st["panel_allowed"] is True and isinstance(st["history"], list))
+        print("\n== Longitud de respuesta y temperatura por modelo")
+        peti = lambda extra=None: c.pedir("/v1/chat/completions", dict({"model": "lfm2-1.2b-rag", "messages": [{"role": "user", "content": "hola"}]}, **(extra or {})))
+        cod, r, _ = c.pedir("/api/config", {"default_max_tokens": 50, "max_tokens_limit": 100})
+        check("fija longitud por defecto y límite", cod == 200 and r["config"]["default_max_tokens"] == 50 and r["config"]["max_tokens_limit"] == 100, r)
+        peti(); check("sin max_tokens: se usa la longitud por defecto del administrador", motor.recibidos[-1]["params"]["max_tokens"] == 50, motor.recibidos[-1]["params"])
+        peti({"max_tokens": 30}); check("max_tokens menor que el límite se respeta", motor.recibidos[-1]["params"]["max_tokens"] == 30)
+        peti({"max_tokens": 5000}); check("max_tokens por encima del límite se recorta al límite", motor.recibidos[-1]["params"]["max_tokens"] == 100, motor.recibidos[-1]["params"])
+        peti({"max_tokens": -1}); check("max_tokens -1 (sin tope) también se recorta al límite", motor.recibidos[-1]["params"]["max_tokens"] == 100)
+        cod, r, _ = c.pedir("/api/config", {"model_overrides": {"lfm2-1.2b-rag": {"temperature": 0.3, "max_tokens": 20, "max_tokens_limit": 40}}})
+        check("fija valores por modelo", cod == 200, r)
+        cod, st, _ = c.pedir("/api/status")
+        mod = next(x for x in st["models"] if x["id"] == "lfm2-1.2b-rag")
+        check("status publica los valores del modelo", mod["gen"] == {"temperature": 0.3, "max_tokens": 20, "max_tokens_limit": 40} and mod["overrides"]["temperature"] == 0.3, mod.get("gen"))
+        peti(); p_ = motor.recibidos[-1]["params"]
+        check("el modelo usa su temperatura y su longitud propias", p_["temperature"] == 0.3 and p_["max_tokens"] == 20, p_)
+        peti({"max_tokens": 5000, "temperature": 1.0}); p_ = motor.recibidos[-1]["params"]
+        check("la petición manda su temperatura, pero el límite del modelo se aplica", p_["temperature"] == 1.0 and p_["max_tokens"] == 40, p_)
+        otro = next(x for x in st["models"] if x["id"] != "lfm2-1.2b-rag" and x["supported"] and not x["embedding"])
+        check("otro modelo no cambia", otro["gen"]["max_tokens"] == 50 and otro["gen"]["max_tokens_limit"] == 100, otro.get("gen"))
+        cod, r, _ = c.pedir("/api/config", {"model_overrides": {"lfm2-1.2b-rag": {"temperature": None}}})
+        cod, st, _ = c.pedir("/api/status")
+        mod = next(x for x in st["models"] if x["id"] == "lfm2-1.2b-rag")
+        check("vaciar un valor vuelve al ajuste general y conserva los otros", "temperature" not in mod["overrides"] and mod["overrides"].get("max_tokens") == 20, mod.get("overrides"))
+        cod, r, _ = c.pedir("/api/config", {"model_overrides": {"lfm2-1.2b-rag": {"max_tokens": "abc"}}})
+        check("valor por modelo inválido -> 400", cod == 400, r)
+        cod, r, _ = c.pedir("/api/config", {"default_max_tokens": 0, "max_tokens_limit": 0, "model_overrides": {"lfm2-1.2b-rag": {"max_tokens": None, "max_tokens_limit": None}}})
+        peti(); check("sin valores: vuelve a 'hasta llenar el contexto' (-1)", motor.recibidos[-1]["params"]["max_tokens"] == -1, motor.recibidos[-1]["params"])
+
+        # "another PC": a request coming from 127.0.0.2 is not the server PC for the server (it only trusts 127.0.0.1)
+        def desde_otra_pc(metodo, ruta, cuerpo=None):
+            cn = http.client.HTTPConnection("127.0.0.1", puerto, timeout=10, source_address=("127.0.0.2", 0))
+            try:
+                cn.request(metodo, ruta, body=json.dumps(cuerpo) if cuerpo is not None else None,
+                           headers={"Content-Type": "application/json"})
+                rr = cn.getresponse(); datos = rr.read()
+                return rr.status, dict(rr.getheaders()), datos
+            finally:
+                cn.close()
+        try:
+            cod_o, cab_o, _ = desde_otra_pc("GET", "/")
+        except OSError as e:
+            print("   (omitido: este sistema no permite conectar desde 127.0.0.2: %s)" % e)
+            cod_o = None
+        if cod_o is not None:
+            check("otra PC: / redirige al chat", cod_o == 302 and cab_o.get("Location") == "/chat", (cod_o, cab_o.get("Location")))
+            cod_o, _, cuerpo_o = desde_otra_pc("GET", "/chat")
+            check("otra PC: /chat se sirve", cod_o == 200 and b"quipullm" in cuerpo_o, cod_o)
+            cod_o, _, cuerpo_o = desde_otra_pc("GET", "/api/status")
+            st_o = json.loads(cuerpo_o)
+            check("otra PC: status sin historial, sin hardware, sin clave de compartir y con panel_allowed falso",
+                  cod_o == 200 and st_o["history"] == [] and st_o["hardware"] == {} and st_o["share_key"] is None and st_o["panel_allowed"] is False, st_o.get("panel_allowed"))
+            check("otra PC: status sigue trayendo los modelos para el chat", len(st_o["models"]) > 0 and "chat_models" in st_o)
+            check("otra PC: /api/logs -> 403", desde_otra_pc("GET", "/api/logs")[0] == 403)
+            check("otra PC: /api/config (lectura) -> 403", desde_otra_pc("GET", "/api/config")[0] == 403)
+            check("otra PC: guardar ajustes -> 403", desde_otra_pc("POST", "/api/config", {"chat_models": ["x"]})[0] == 403)
+            check("otra PC sin clave: cargar un modelo -> 403", desde_otra_pc("POST", "/api/load", {"model": "lfm2-1.2b-rag"})[0] == 403)
+            check("otra PC: /v1/models sigue funcionando", desde_otra_pc("GET", "/v1/models")[0] == 200)
 
         cod, r, _ = c.pedir("/api/config", {"max_queue": 1})
         check("fija el límite de cola", cod == 200 and r["config"]["max_queue"] == 1, r)
@@ -1049,6 +1125,56 @@ def resiliencia():
     check("browser (Linux): returns None when there is none (falls back to the default browser)",
           sv.buscar_navegador({}, "linux", lambda n: None) is None)
     check("browser: config 'browser' takes priority", sv.buscar_navegador({"browser": sys.executable}, "linux", esta.get) == sys.executable)
+
+    # --share and the remote admin rule
+    cfg_c = {"host": "127.0.0.1", "api_key": ""}
+    ent = {}
+    k = sv.preparar_compartir(cfg_c, ent)
+    check("--share: listens on 0.0.0.0 and creates a key when none is set",
+          cfg_c["host"] == "0.0.0.0" and bool(k) and len(k) >= 10 and ent.get("LLM_API_KEY") == k, (cfg_c, k))
+    check("--share: the key is not written into the config dict", cfg_c["api_key"] == "")
+    ent2 = {}
+    check("--share: keeps an existing key from config.json (returns None)", sv.preparar_compartir({"host": "127.0.0.1", "api_key": "mi-clave"}, ent2) is None and "LLM_API_KEY" not in ent2)
+    ent3 = {"LLM_API_KEY": "del-entorno"}
+    check("--share: keeps the key from the environment", sv.preparar_compartir({"host": "127.0.0.1"}, ent3) is None and ent3["LLM_API_KEY"] == "del-entorno")
+    check("--share: two runs create different keys", sv.preparar_compartir({}, {}) != sv.preparar_compartir({}, {}))
+    check("max_tokens_efectivo: nothing asked, no default -> until the context is full", sv.max_tokens_efectivo(None) == -1)
+    check("max_tokens_efectivo: default used when nothing is asked", sv.max_tokens_efectivo(None, 64) == 64)
+    check("max_tokens_efectivo: asked value kept below the limit", sv.max_tokens_efectivo(80, 64, 100) == 80)
+    check("max_tokens_efectivo: capped by the limit", sv.max_tokens_efectivo(500, 64, 100) == 100 and sv.max_tokens_efectivo(0, 0, 100) == 100 and sv.max_tokens_efectivo(-1, 0, 100) == 100)
+    check("max_tokens_efectivo: no limit keeps big values", sv.max_tokens_efectivo(10000, 0, 0) == 10000)
+    check("panel: the server PC always sees it", sv.panel_permitido(True, {}) is True)
+    check("panel: another PC does not see it by default", sv.panel_permitido(False, {}) is False)
+    check("panel: another PC sees it only with remote_panel", sv.panel_permitido(False, {"remote_panel": True}) is True)
+    check("config defaults: chat_models empty and remote_panel off", sv.CONFIG_DEFECTO["chat_models"] == [] and sv.CONFIG_DEFECTO["remote_panel"] is False)
+    cambios, errs = sv.validar_ajustes({"chat_models": ["a", "b", "a"]})
+    check("validar_ajustes: chat_models without duplicates", cambios.get("chat_models") == ["a", "b"] and not errs, (cambios, errs))
+    check("admin from another PC without a key is refused", sv.operacion_admin_permitida(False, "") is False)
+    check("admin from another PC with a key is allowed", sv.operacion_admin_permitida(False, "k") is True)
+    check("admin from the server PC is always allowed", sv.operacion_admin_permitida(True, "") is True)
+
+    # the chat page: no external resources (the suite promises no outgoing connections), no innerHTML on model output
+    chat = open(os.path.join(AQUI, "web", "chat.html"), encoding="utf-8").read()
+    externos = re.findall(r'(?:src|href)\s*=\s*["\']https?://|url\(\s*["\']?https?://|@import|fetch\(\s*["\']https?://', chat)
+    check("chat.html loads nothing from the internet", not externos, externos)
+    ej = open(os.path.join(AQUI, "examples", "agent-chat.html"), encoding="utf-8").read()
+    check("examples/agent-chat.html loads nothing from the internet", not re.findall(r'(?:src|href)\s*=\s*["\']https?://|url\(\s*["\']?https?://|@import', ej))
+    check("examples/agent-chat.html inserts the model's text as text (no .innerHTML = )", ".innerHTML" not in ej)
+    check("chat.html does not use innerHTML (model output is inserted as text)", "innerHTML" not in chat)
+    panel = open(os.path.join(AQUI, "web", "panel.html"), encoding="utf-8").read()
+    claves = {}
+    for lang in ("en", "es"):
+        bloque = panel.split("  %s: {" % lang, 1)[1].split("\n},", 1)[0]
+        claves[lang] = set(re.findall(r'^ "([A-Za-z0-9_ ]+)":', bloque, re.M))
+    check("panel i18n: English and Spanish have the same keys", claves["en"] == claves["es"], sorted(claves["en"] ^ claves["es"]))
+    usadas = set(re.findall(r'data-ih?="([A-Za-z0-9_]+)"', panel))
+    check("panel i18n: every data-i / data-ih key exists", usadas <= claves["en"], sorted(usadas - claves["en"]))
+    ct = open(os.path.join(AQUI, "web", "chat.html"), encoding="utf-8").read()
+    tx = {}
+    for lang in ("en", "es"):
+        bloque = ct.split("  %s: {" % lang, 1)[1].split("\n  }", 1)[0]
+        tx[lang] = set(re.findall(r'(?:^\s*|",\s*)([A-Za-z]+):\s*"', bloque, re.M))
+    check("chat i18n: English and Spanish have the same keys", tx["en"] == tx["es"], sorted(tx["en"] ^ tx["es"]))
 
     js = open(os.path.join(AQUI, "web", "js", "engine.js"), encoding="utf-8").read()
     check("engine.js: AbortController and 35000 ms cutoff", "AbortController" in js and "35000" in js)

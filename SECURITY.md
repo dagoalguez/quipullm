@@ -5,9 +5,16 @@
 - By default the server listens on **`127.0.0.1` only** (this PC). To serve your network set `"host": "0.0.0.0"` in `config.json`
   (or `python server.py --host 0.0.0.0`) **and** an API key. Without a key, anyone who can reach the port can run models on your GPU,
   load/unload models and read the model list; the server prints a warning at start in that case.
+- **Easiest way to share with a team:** `python server.py --share`. It listens on `0.0.0.0` and, if no key is configured, creates one for that run
+  (printed in the console and shown in the panel to the server PC only; it is not written to `config.json`). Teammates open `/chat` and type it once.
+- **Other PCs do not get the panel.** `/` and `/panel` send them to `/chat`; `/api/logs` and `/api/config` answer 403, and `/api/status` omits the request history
+  (which has client addresses) and the hardware details. `"remote_panel": true` in `config.json` turns this off.
+- Which models the chat page offers (`chat_models`) is a convenience for the chat page, not access control: the API still serves every model to whoever has the key.
+- Loading, unloading and rescanning models from another PC is refused unless an API key protects the server (and then it needs the key).
 - Set a key in the panel (Settings → API key, done from the server PC) or with the `LLM_API_KEY` environment variable
   (it wins over `config.json`). Clients send `Authorization: Bearer <key>`. The panel and `/api/status` stay readable so people can
   see the status; they never expose the key.
+- A key is one shared secret for everyone: there are no per-user accounts, limits or audit trail. Anyone who has it can use the GPU and unload the model between other people's requests.
 - The key is stored in plain text in `config.json` (unless provided through the environment). Protect that file.
 - There is no TLS. Traffic, prompts and the key travel in clear text on the network. Put a reverse proxy with TLS in front if that matters.
 - **Do not expose the server to the internet.**

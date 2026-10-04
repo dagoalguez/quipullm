@@ -9,3 +9,5 @@ tests/conformance/cache/
 .DS_Store
 models/
 tools/verificacion_resultado.json
+fallo_ci.txt
+*.log

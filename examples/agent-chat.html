@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Example: a small web chat agent on top of the quipullm API</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 24px auto; padding: 0 16px; line-height: 1.5; }
+  fieldset { border: 1px solid #ccd; border-radius: 8px; margin-bottom: 14px; }
+  label { display: block; margin: 6px 0; font-size: 14px; }
+  input, textarea, select { width: 100%; font: inherit; padding: 6px 8px; box-sizing: border-box; }
+  #chat { border: 1px solid #ccd; border-radius: 8px; min-height: 240px; padding: 10px; white-space: pre-wrap; overflow-y: auto; max-height: 50vh; }
+  .yo { color: #0f5ea8; margin-top: 8px; } .bot { margin-top: 8px; } .err { color: #b00020; }
+  #fila { display: flex; gap: 8px; margin-top: 10px; } #fila input { flex: 1; } button { font: inherit; padding: 6px 14px; }
+</style>
+</head>
+<body>
+<h1>Web chat agent: example</h1>
+<p>One HTML file, no libraries. It shows the three things a program does with the API: <b>list the models</b>, <b>send the conversation</b> (with a system prompt that gives the agent its role) and <b>read the answer as it streams</b>. Read the script at the bottom: it is short and commented.</p>
+
+<fieldset><legend>Server</legend>
+  <label>Address <input id="url" placeholder="http://192.168.1.20:1234"></label>
+  <label>Access key (leave empty if the server has none) <input id="clave" type="password" autocomplete="off"></label>
+  <button id="conectar" type="button">Connect and list models</button>
+  <label>Model <select id="modelo"></select></label>
+</fieldset>
+
+<fieldset><legend>The agent's role (system prompt)</legend>
+  <textarea id="sistema" rows="4">You are the assistant of a small bakery. Answer in at most three sentences, in the customer's language. If you do not know a price or an opening time, say so and suggest calling the shop. Never invent products.</textarea>
+</fieldset>
+
+<div id="chat" aria-live="polite"></div>
+<div id="fila"><input id="texto" placeholder="Write a message and press Enter"><button id="enviar" type="button">Send</button></div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+// If this page is served by the quipullm server itself, its own address is the default.
+$("url").value = location.protocol.startsWith("http") ? location.origin : "http://localhost:1234";
+const mensajes = [];                         // the conversation: the API is stateless, you send the whole history every time
+
+const base = () => $("url").value.replace(/\/+$/, "");
+const cabeceras = () => {                    // the key travels as "Authorization: Bearer <key>"
+  const h = { "Content-Type": "application/json" };
+  if ($("clave").value) h.Authorization = "Bearer " + $("clave").value;
+  return h;
+};
+function linea(clase, texto) {               // textContent (never innerHTML): the model's text is untrusted
+  const d = document.createElement("div"); d.className = clase; d.textContent = texto; $("chat").append(d); return d;
+}
+
+// 1) List the models: GET /v1/models  ->  { data: [ { id: "..." }, ... ] }
+$("conectar").onclick = async () => {
+  try {
+    const r = await fetch(base() + "/v1/models", { headers: cabeceras() });
+    if (!r.ok) throw new Error((await r.json()).error.message);
+    const ids = (await r.json()).data.map((m) => m.id);
+    $("modelo").textContent = "";
+    for (const id of ids) { const o = document.createElement("option"); o.textContent = id; $("modelo").append(o); }
+  } catch (e) { linea("err", "Could not connect: " + e.message); }
+};
+
+// 2) Send the conversation: POST /v1/chat/completions with stream:true
+//    The system message is what turns a general model into "your" agent.
+async function enviar() {
+  const txt = $("texto").value.trim();
+  if (!txt || !$("modelo").value) return;
+  $("texto").value = "";
+  mensajes.push({ role: "user", content: txt });
+  linea("yo", "You: " + txt);
+  const burbuja = linea("bot", "");
+  let respuesta = "";
+  try {
+    const r = await fetch(base() + "/v1/chat/completions", {
+      method: "POST", headers: cabeceras(),
+      body: JSON.stringify({
+        model: $("modelo").value,
+        stream: true,
+        messages: [{ role: "system", content: $("sistema").value }].concat(mensajes),
+        // temperature and max_tokens are optional: if you leave them out, the administrator's defaults apply.
+      }),
+    });
+    if (!r.ok) throw new Error((await r.json()).error.message);
+
+    // 3) Read the stream: server-sent events, one "data: {json}" line per piece, ending with "data: [DONE]"
+    const lector = r.body.getReader(), dec = new TextDecoder();
+    let buf = "";
+    for (;;) {
+      const { value, done } = await lector.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n\n")) >= 0) {
+        const evento = buf.slice(0, i).trim(); buf = buf.slice(i + 2);
+        if (!evento.startsWith("data:")) continue;
+        const dato = evento.slice(5).trim();
+        if (dato === "[DONE]") continue;
+        const j = JSON.parse(dato);
+        if (j.error) throw new Error(j.error.message);
+        const trozo = j.choices[0].delta.content;          // a few characters of the answer
+        if (trozo) { respuesta += trozo; burbuja.textContent = respuesta; }
+        // reasoning models also send delta.reasoning_content (their "thinking"), which we ignore here
+      }
+    }
+    mensajes.push({ role: "assistant", content: respuesta });   // remember it for the next turn
+  } catch (e) {
+    mensajes.pop();                                              // drop the question that failed
+    burbuja.className = "err"; burbuja.textContent = "Error: " + e.message;
+  }
+}
+$("enviar").onclick = enviar;
+$("texto").onkeydown = (e) => { if (e.key === "Enter") enviar(); };
+</script>
+</body>
+</html>

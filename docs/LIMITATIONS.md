@@ -10,7 +10,8 @@
 
 **Serving**
 - **One request at a time.** Others wait in a FIFO queue (limit `max_queue`, default 64, then HTTP 429). Switching between models reloads the model.
-- No continuous batching, no prompt/KV cache reuse between requests (long multi-turn prompts are recomputed).
+- No continuous batching, no prompt/KV cache reuse between requests (long multi-turn prompts are recomputed). In the `/chat` page this means each reply takes longer as the conversation grows; use *New chat* to start light.
+- The `/chat` page keeps the conversation only in the page (nothing is stored on the server), has no accounts, and renders only code blocks, `inline code` and bold; there is no full Markdown, file upload or image attachment in it yet (the API does support images for vision models).
 - KV cache is f32.
 - No tool/function calling and no grammar-constrained or JSON-schema-enforced output. `response_format: json_object` returns 400
   (as LM Studio did); `json_schema` is accepted but not enforced.

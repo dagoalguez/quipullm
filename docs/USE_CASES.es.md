@@ -1,10 +1,10 @@
-# ¿Para quién es quipullm y cómo usarlo en entornos restringidos?
+# ¿Para quién es quipullm y cómo usarlo?
 
 quipullm es un servidor LLM autoalojado que puedes leer completo antes de ejecutarlo. Esta página dice para qué sirve eso y, igual de importante, lo que **no** te ofrece. Los límites exactos están en [LIMITATIONS.md](LIMITATIONS.md) y [SECURITY.md](../SECURITY.md) (en inglés).
 
 ## Qué obtienes
 
-- **Solo texto.** Sin `.exe`, sin `.dll`/`.so`, sin instaladores, sin binarios compilados, sin `pip`, sin `npm`, sin Docker. Todo el proyecto es `.py .js .html .json .md`. Se puede copiar a una máquina detrás de un proxy que rompe SSL o de un filtro de binarios, y leer antes de ejecutarlo.
+- **Solo texto.** Sin `.exe`, sin `.dll`/`.so`, sin instaladores, sin binarios compilados, sin `pip`, sin `npm`, sin Docker. Todo el proyecto es `.py .js .html .json .md`. Se puede copiar a cualquier máquina y leer entero antes de ejecutarlo.
 - **Tus prompts se quedan en tu máquina.** Los modelos corren en la GPU de la PC servidora. Por defecto el servidor escucha solo en `127.0.0.1`. Los prompts no se escriben en el registro (el registro guarda conteos de peticiones y de tokens).
 - **Sin conexiones salientes que hayamos podido encontrar** (ver [Cómo lo comprobamos](#cómo-comprobamos-lo-de-sin-conexiones-salientes)). Es una comprobación, no una auditoría de seguridad.
 - **API compatible con OpenAI y LM Studio.** El código existente solo cambia la URL base.
@@ -15,8 +15,7 @@ quipullm es un servidor LLM autoalojado que puedes leer completo antes de ejecut
 
 | Quién | Uso típico |
 |---|---|
-| Sector público, salud, legal, finanzas | Resumir, clasificar o redactar con datos que no deben salir de la organización |
-| Redes institucionales restringidas | Instalar cuando solo pasan archivos de texto |
+| Equipos que prefieren que su texto se quede en su propio equipo | Resumir, clasificar o redactar con modelos pequeños, tras revisar el código ellos mismos (sin certificación, sin auditoría, sin TLS) |
 | Oficinas pequeñas con PC modestas | Un punto de IA compartido en una PC con GPU integrada o una tarjeta común |
 | Colegios y laboratorios | Aulas donde no se puede instalar software |
 | Desarrolladores | Probar contra una API compatible con OpenAI, sin internet y sin costo por token |
@@ -32,11 +31,11 @@ quipullm es un servidor LLM autoalojado que puedes leer completo antes de ejecut
 - **Cada modelo tiene su propia licencia.** Revisa la de cada modelo que despliegues.
 - **La comparación con LM Studio es de una sola máquina** (Intel i7-1270P + Intel UHD, Windows, Edge). Otras dos máquinas se midieron sin ella (ver [BENCHMARKS.md](BENCHMARKS.md)); el resto del hardware no está medido.
 
-## Lista de comprobación para evaluarlo en un entorno restringido
+## Lista de comprobación para evaluarlo
 
 1. Copia el repositorio como texto; lee `server.py`, `templates.py` y `web/` (todo el código son unos pocos miles de líneas).
 2. Arranca con `python server.py` (por defecto, solo `127.0.0.1`). No pongas `"host": "0.0.0.0"` hasta definir también una clave de API.
-3. Si otras máquinas deben llegar a él: define clave de API, define `"host"` y pon un proxy inverso con TLS (agrega su nombre a `allowed_hosts`).
+3. Si otras máquinas deben llegar a él: arráncalo con `python server.py --share` (o define tú la clave de API y `"host"`) y pon un proxy inverso con TLS si el tráfico debe ir cifrado (agrega su nombre a `allowed_hosts`).
 4. Ejecuta `python tests/run_all.py` (solo librería estándar; se esperan 205 comprobaciones aprobadas).
 5. Verifica tú mismo lo de «sin conexiones salientes» en tu entorno (abajo).
 6. Revisa la licencia de cada modelo que pienses cargar.

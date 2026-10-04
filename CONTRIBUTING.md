@@ -10,7 +10,7 @@ Thanks for helping. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). The
 - Correctness is decided by tests against llama.cpp, not by how the output reads. A pull request that changes the engine must
   keep `python tests/run_all.py --engine` green (or explain why a case changes).
 - New architecture PRs include: manifest/module, generator variant, passing conformance output including a mutation check, and one real-model measurement.
-- No model files, no other binaries, no secrets, no personal or institutional names in commits or screenshots (the panel shows the PC name and folder paths: crop them).
+- No model files, no other binaries, no secrets, no personal or private names in commits or screenshots (the panel shows the PC name and folder paths: crop them).
 - Interface, messages, config keys and HTTP API are English. Comments and docstrings are English; many internal identifiers (function and variable names) are still Spanish. English contributions are welcome and so are renames of existing identifiers (keep the tests green).
 
 ## Setup

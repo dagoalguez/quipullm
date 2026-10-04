@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/img/logo.svg" alt="quipullm logo" width="72"></p>
+
 # quipullm
 
 [English](README.md) · **Español**
@@ -5,40 +7,47 @@
 Servidor LLM autoalojado con **API compatible con OpenAI y LM Studio**. El motor de inferencia está escrito desde cero en
 **WebGPU (WGSL + JavaScript)** y corre dentro de una ventana del navegador; el backend es **Python puro, solo librería estándar**.
 
-**Sin `pip`, sin `npm`, sin `.exe` ni otros binarios compilados, sin instaladores, sin Docker.** Todo el proyecto es texto plano
-(`.py .js .html .json .md`), así que se puede copiar a un equipo detrás de un proxy que rompe SSL o de un filtro que bloquea
-binarios, y arrancar con un comando:
+**Nada que instalar: sin `pip`, sin `npm`, sin `.exe` ni otros binarios compilados, sin instaladores, sin Docker.** Todo el proyecto es texto plano
+(`.py .js .html .json .md`), así que puedes leerlo entero antes de ejecutarlo, y arrancarlo con un comando. Está pensado para PCs donde instalar software es difícil (sin permisos de administrador, equipos bloqueados, sin descargar paquetes):
 
 ```
 python server.py
 ```
 
-Nació para ese tipo de red institucional restringida. Lee archivos **GGUF** estándar y sus rutas de texto y de embeddings se
-comparan número por número con llama.cpp (ver [Cómo se verifica](#cómo-se-verifica)).
+Lee archivos **GGUF** estándar y sus rutas de texto y de embeddings se comparan número por número con llama.cpp
+(ver [Cómo se verifica](#cómo-se-verifica)). Abre <http://localhost:1234/chat> para una página de chat, o apunta cualquier cliente OpenAI a él.
 
-<!-- Agrega aquí una captura del panel cuando tengas una con GPU real y un modelo real:
 ![Panel de control](docs/img/panel.png)
--->
 
-> **Estado:** usado en un equipo Windows con GPU integrada Intel (i7-1270P, Intel UHD, Edge). Otras GPU y sistemas
-> *deberían* funcionar porque WebGPU es un estándar, pero **no se han medido**. Todo lo que sabemos que falta o está flojo está en
-> [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
+![Página de chat](docs/img/chat.png)
+
+> **Estado: versión temprana (4.0.x).** Medido en tres máquinas: Windows con GPU integrada Intel (comparada con LM Studio),
+> Windows con una GTX 1050 Ti y un portátil Linux antiguo con Intel HD 4000 (las dos últimas con solo dos corridas por modelo). AMD, Apple y
+> GPU Linux recientes **no están medidas**. Todo lo que sabemos que falta o está flojo está en [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 
 **No necesitas una tarjeta gráfica dedicada.** Basta una GPU integrada (Intel, AMD o similar) siempre que tu navegador tenga WebGPU con aceleración
 por hardware; la máquina con la que comparamos contra LM Studio es justo ese caso. Una tarjeta dedicada no es automáticamente más rápida: una GTX 1050 Ti (Windows, Edge) dio 42 / 14,7 / 5,0 tok/s con esos mismos tres modelos, cerca de esa iGPU (44,3 / 15,7 / 5,3), con solo dos corridas cada uno y sin comparación con LM Studio en esa PC (ver [docs/BENCHMARKS.md](docs/BENCHMARKS.md)).
 
-## ¿Para quién es?
+## ¿Es para ti?
 
-- **Organizaciones con datos sensibles o redes restringidas** (sector público, salud, legal, finanzas, instituciones con restricciones): los prompts se
-  quedan en tu máquina, el código es texto plano que puedes leer antes de ejecutarlo y no hace falta instalar nada.
-- **Oficinas pequeñas y colegios con PC modestas:** un punto de IA compartido; no hace falta tarjeta gráfica dedicada.
-- **Desarrolladores:** una API compatible con OpenAI sin internet y sin costo por token.
-- **Quien tenga su propio modelo:** copia cualquier GGUF de una arquitectura soportada a la carpeta de modelos y, si tu arquitectura es nueva, agrégala tú
+**Encaja bien**
+
+- **Probar modelos locales pequeños (de 1 a 4B aprox.)** para resumir, clasificar, extraer o redactar texto, sin internet y sin costo por token.
+- **Pocas personas compartiendo una PC:** arráncalo con `python server.py --share` y envíales el enlace del chat (ver [Compártelo con tu equipo](#compártelo-con-tu-equipo)).
+- **Desarrolladores** que quieren una API compatible con OpenAI para probar sin conexión, y un endpoint local de embeddings (`nomic-embed-text`) para prototipos.
+- **Quien tenga su propio modelo:** copia cualquier GGUF de una arquitectura soportada a la carpeta de modelos; si tu arquitectura es nueva, agrégala tú
   (a menudo basta un manifiesto JSON) con pruebas de conformidad que la comparan con llama.cpp; ver [Agregar modelos y arquitecturas](#agregar-modelos-y-arquitecturas).
 - **Investigadores y estudiantes:** un motor de inferencia WebGPU pequeño y legible, y un [método de validación](#cómo-se-verifica) para estudiar o ampliar.
 
-**No** incluye ninguna certificación ni auditoría de seguridad externa, atiende una petición a la vez y no tiene TLS. Lee
-[docs/USE_CASES.es.md](docs/USE_CASES.es.md) antes de proponerlo en una organización.
+**No encaja (todavía)**
+
+- **Respuestas rápidas con modelos de 7–8B en una GPU integrada:** unos 2–3 tokens/s en la que medimos.
+- **Muchos usuarios a la vez:** atiende una petición a la vez; las demás esperan.
+- **Agentes o salida estructurada:** todavía sin tool calling ni JSON schema forzado.
+- **Un servidor sin pantalla:** el motor necesita una ventana del navegador abierta en la PC servidora.
+- **Lo que exija certificación, auditoría de seguridad externa o tráfico cifrado:** no tiene nada de eso (sin TLS).
+  Los prompts se quedan en tu máquina y no encontramos conexiones salientes, pero eso es una comprobación, no una auditoría; revísalo tú.
+  Lee [docs/USE_CASES.es.md](docs/USE_CASES.es.md) antes de proponerlo en una organización.
 
 ## Inicio rápido (5 pasos, nada que instalar)
 
@@ -53,7 +62,7 @@ por hardware; la máquina con la que comparamos contra LM Studio es justo ese ca
    ```
    Se abre una ventana pequeña llamada *quipullm engine*: **déjala abierta** (puedes minimizarla), ahí se hace el trabajo de la GPU. Abre el
    panel en <http://localhost:1234/>; cuando la insignia diga **motor: listo**, pulsa *Cargar* junto a tu modelo (el panel tiene un selector English/Español arriba a la derecha; por defecto sigue el idioma del navegador).
-5. **Habla con él.** En la caja *Probar* del panel, o desde cualquier cliente OpenAI cambiando solo la URL base:
+5. **Habla con él.** Abre la página de chat en <http://localhost:1234/chat>, usa la caja *Probar* del panel, o llámalo desde cualquier cliente OpenAI cambiando solo la URL base:
 
    ```
    curl http://localhost:1234/v1/chat/completions -H "Content-Type: application/json" \
@@ -80,8 +89,9 @@ Medido en **un** equipo: Intel Core i7-1270P con GPU integrada Intel UHD, Window
 | Gemma 3 4B (Q4_K_M) | 5,3 tok/s |
 | Qwen2.5-Coder 7B (Q4_K_M) | 2,8–3,1 tok/s |
 
-Tus números serán distintos. **No** tenemos mediciones en NVIDIA, AMD, Apple ni Linux; si ejecutas `tools/bench.py`, por favor
-envíanos los resultados (ver [CONTRIBUTING.md](CONTRIBUTING.md)).
+Tus números serán distintos. Otras dos máquinas (una GTX 1050 Ti en Windows y una Intel HD 4000 en Linux) están en
+[docs/BENCHMARKS.md](docs/BENCHMARKS.md), sin comparación con LM Studio. AMD, Apple y GPU NVIDIA/Linux recientes **no están medidas**; si ejecutas
+`tools/bench.py`, por favor envíanos los resultados (ver [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## Características
 
@@ -94,7 +104,8 @@ envíanos los resultados (ver [CONTRIBUTING.md](CONTRIBUTING.md)).
 - Embeddings: `nomic-embed-text` (`float` y `base64`).
 - Las plantillas de chat se leen del GGUF (`tokenizer.chat_template`) con un intérprete Jinja propio en librería estándar
   (comparado con jinja2 real), con respaldos escritos a mano.
-- Panel web: modelos, estimación de memoria, estado y registros en vivo, chat de prueba y página de configuración.
+- **Página de chat** (`/chat`): conversación con streaming, historial solo en la página, botón de parar, instrucción de sistema, razonamiento por separado, inglés/español. No se guarda nada en el servidor.
+- **Ejemplo para desarrolladores:** [`examples/agent-chat.html`](examples/agent-chat.html) es un agente de chat web de un solo archivo (instrucción de sistema + streaming) hecho solo con la API; ábrelo en un navegador y apúntalo a tu servidor. Cada ajuste está explicado en [docs/SETTINGS.md](docs/SETTINGS.md) (en inglés). estimación de memoria, estado y registros en vivo, caja de prueba rápida y página de configuración (las opciones avanzadas están plegadas).
 - Clave de API opcional, límite de cola (HTTP 429) y estimación de memoria por modelo ("cabe / justo / no cabe").
 - **Arquitecturas enchufables:** se agrega un manifiesto en `web/arch/` y se re-escanea, sin reiniciar
   ([docs/ARCH_GUIDE.md](docs/ARCH_GUIDE.md)). Qwen 3 se añadió solo con un manifiesto.
@@ -174,9 +185,31 @@ Qué hay que saber antes de confiar en esto:
   *cabe / justo / no cabe* por modelo; es una estimación, porque WebGPU no informa la VRAM libre.
 - **Registros:** el panel (sección *Registro*), `logs/server.log` y la ventana del motor.
 
+## Compártelo con tu equipo
+
+```
+python server.py --share
+```
+
+Esto escucha en toda la red y, si no pusiste una clave de API, crea una **para esta ejecución** (sale en la consola y en el panel, y no se escribe en
+`config.json`). El panel muestra la dirección para dar a tu equipo (por ejemplo `http://192.168.1.20:1234`): quien la abra desde otra PC cae directo en
+el chat, escribe la clave una vez y conversa con el modelo. Los desarrolladores usan la misma dirección más `/v1` con `Authorization: Bearer <clave>`.
+Ten en cuenta:
+
+- **Las otras PC no ven el panel.** Las envía al chat y no pueden leer el registro, los ajustes ni el historial de peticiones; solo la PC servidora
+  administra el servidor. (Pon `"remote_panel": true` en `config.json` si quieres que puedan mirarlo.)
+- **Tú eliges qué ofrece el chat.** En la tabla Modelos del panel, marca los modelos que verá tu equipo en el chat y ordénalos con las flechas; el primero
+  es el predeterminado. Esto solo da forma a la página de chat: la API sigue listando todos los modelos.
+- Usa la **dirección IP**. Los nombres de PC a menudo no se resuelven desde otros sistemas (un portátil Linux normalmente no encuentra una PC Windows por nombre).
+
+- El modelo corre en **tu** GPU, de a una petición: con varias personas, las demás esperan en la cola.
+- El tráfico **no va cifrado** (HTTP). Compártelo solo en una red de confianza y nunca por internet.
+- Desde otra PC la clave también permite cargar y descargar modelos; sin clave esas acciones se rechazan desde otras PC.
+- Para una clave permanente, defínela en el panel (Ajustes → Clave de API) o con `LLM_API_KEY`.
+
 ## Seguridad
 
-Por defecto el servidor escucha **solo en 127.0.0.1**. Para abrirlo a tu red pon `"host": "0.0.0.0"` y una clave de API (en el
+Por defecto el servidor escucha **solo en 127.0.0.1**. Para abrirlo a tu red usa `--share` (arriba) o pon `"host": "0.0.0.0"` y una clave de API (en el
 panel o con la variable `LLM_API_KEY`). Otras páginas web no pueden manejar el panel ni el motor a través de tu navegador
 (comprobación de origen y de `Host`). Lee [SECURITY.md](SECURITY.md) antes de exponerlo. No hay TLS; no lo expongas a internet.
 

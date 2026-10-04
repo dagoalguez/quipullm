@@ -15,6 +15,7 @@ OpenAI / LM Studio compatible LLM server built with only the Python standard lib
 
 Usage:  python server.py                 (opens the engine in Edge automatically; listens on this PC only)
         python server.py --host 0.0.0.0  (accepts network connections; also set an api_key)
+        python server.py --share        (shares with your network: listens on 0.0.0.0 and creates an access key for this run)
         python server.py --no-engine      (does not open Edge; useful for tests)
 """
 import argparse
@@ -44,7 +45,7 @@ try:
 except Exception:   # the server keeps working (with fallback templates)
     templates = None
 
-VERSION = "4.0.1"
+VERSION = "4.1.0"
 ESPERA_REAPERTURA = 90   # seconds a waiting request keeps waiting for the engine window to be reopened (auto-relaunch)
 DIR = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.join(DIR, "web")
@@ -118,6 +119,10 @@ CONFIG_DEFECTO = {
     "gpu_memory_gb": 0,       # 0 = estimate automatically; a number forces the memory budget for models (GB)
     "tiled_prefill": True,   # tiled prefill kernel (K-quant models); False = the v2.0 method
     "open_engine": True,
+    "default_max_tokens": 0,  # response length when the request does not say (0 = until the context is full, as before)
+    "max_tokens_limit": 0,    # hard cap on the response length, whatever the request asks (0 = none; the context still limits it)
+    "chat_models": [],        # ids shown in the /chat page, in this order (the first one is the default); empty = all chat models
+    "remote_panel": False,    # False: other PCs are sent to /chat and cannot see the panel, logs or settings; True: they can look
     "browser": "",            # path to msedge.exe/chrome.exe; empty = look for Edge
     "timeout_seconds": 1800,   # maximum wait for a request (queue + generation)
     "default_sampling": {   # same defaults as LM Studio
@@ -173,7 +178,31 @@ def cargar_config(ruta):
 AJUSTES_PANEL = {
     "default_ctx": (int, 256, 1048576), "kv_max_mb": (int, 0, 65536), "gpu_memory_gb": (float, 0, 4096), "max_queue": (int, 0, 100000),
     "timeout_seconds": (int, 30, 86400), "port": (int, 1, 65535),
+    "default_max_tokens": (int, 0, 1048576), "max_tokens_limit": (int, 0, 1048576),
 }
+OVERRIDES_MODELO = {"temperature": (float, 0, 5), "max_tokens": (int, 0, 1048576), "max_tokens_limit": (int, 0, 1048576)}
+
+
+def max_tokens_efectivo(pedido, defecto=0, limite=0):
+    """Response length for a request: what it asks (or the default when it says nothing), never above the limit.
+    -1 means "until the context is full". The engine also stops at the end of the context."""
+    if pedido is None:
+        pedido = defecto if defecto and defecto > 0 else -1
+    pedido = int(pedido)
+    if pedido <= 0:
+        pedido = -1
+    if limite and limite > 0 and (pedido < 0 or pedido > limite):
+        pedido = int(limite)
+    return pedido
+
+
+def ajustes_generacion(cfg, m):
+    """Temperature, default response length and its limit for a model (per-model values win over the general ones)."""
+    ov = (cfg.get("model_overrides") or {}).get(m["id"]) or {}
+    temp = ov.get("temperature")
+    return {"temperature": float(temp) if temp is not None else cfg["default_sampling"].get("temperature"),
+            "max_tokens": int(ov["max_tokens"]) if ov.get("max_tokens") is not None else int(cfg.get("default_max_tokens") or 0),
+            "max_tokens_limit": int(ov["max_tokens_limit"]) if ov.get("max_tokens_limit") is not None else int(cfg.get("max_tokens_limit") or 0)}
 MUESTREO_PANEL = {"temperature": (float, 0, 5), "top_k": (int, 0, 1000), "top_p": (float, 0, 1),
                   "min_p": (float, 0, 1), "repeat_penalty": (float, 0.5, 3)}
 
@@ -208,6 +237,43 @@ def validar_ajustes(d):
     for k in ("open_engine", "memory_check"):
         if k in d:
             cambios[k] = bool(d[k])
+    if "model_overrides" in d:
+        mo = d["model_overrides"]
+        if not isinstance(mo, dict) or len(mo) > 500:
+            errores.append("model_overrides must be an object with one entry per model id")
+        else:
+            res = {}
+            for mid, vals in mo.items():
+                if not isinstance(mid, str) or not 0 < len(mid) <= 300 or not isinstance(vals, dict):
+                    errores.append("model_overrides: invalid entry"); continue
+                e = {}
+                for k, (tipo, lo, hi) in OVERRIDES_MODELO.items():
+                    if k not in vals:
+                        continue
+                    if vals[k] is None or vals[k] == "":
+                        e[k] = None                       # clears the value: the general setting applies again
+                        continue
+                    try:
+                        v = tipo(vals[k])
+                    except (TypeError, ValueError):
+                        errores.append("%s (%s) must be a number" % (k, mid)); continue
+                    if not lo <= v <= hi:
+                        errores.append("%s (%s) must be between %s and %s" % (k, mid, lo, hi))
+                    else:
+                        e[k] = v
+                res[mid] = e
+            cambios["model_overrides"] = res
+    if "chat_models" in d:
+        v = d["chat_models"]
+        if (not isinstance(v, list) or len(v) > 500 or
+                not all(isinstance(x, str) and 0 < len(x) <= 300 for x in v)):
+            errores.append("chat_models must be a list of model ids")
+        else:
+            vistos = []
+            for x in v:
+                if x not in vistos:
+                    vistos.append(x)
+            cambios["chat_models"] = vistos
     if isinstance(d.get("default_sampling"), dict):
         m = {}
         for k, (tipo, lo, hi) in MUESTREO_PANEL.items():
@@ -760,7 +826,9 @@ class Registro:
         return {"id": m["id"], "arch": m["arch"], "name": m["nombre"], "file": m["relativo"],
                 "gb": round(m["bytes"] / 1e9, 2), "quantization": m["cuantizacion"],
                 "supported": m["soportado"], "embedding": m["embedding"], "vision": m["vision"], "vision_ok": m["vision_ok"],
-                "match_keys": sorted(m["claves"]), "ctx": self.ctx_para(m), "memory": self._memoria_publica(m)}
+                "match_keys": sorted(m["claves"]), "ctx": self.ctx_para(m), "memory": self._memoria_publica(m),
+                "gen": ajustes_generacion(self.cfg, m),
+                "overrides": {k: v for k, v in ((self.cfg.get("model_overrides") or {}).get(m["id"]) or {}).items() if k in OVERRIDES_MODELO}}
 
     def _memoria_publica(self, m):
         if not m["soportado"]:
@@ -1283,6 +1351,31 @@ def clave_api(cfg):
     return (os.environ.get("LLM_API_KEY") or cfg.get("api_key") or "").strip()
 
 
+def panel_permitido(es_local, cfg):
+    """The panel, the logs and the settings are for the server PC; other PCs only get the chat and the API
+    (unless the owner sets "remote_panel": true)."""
+    return bool(es_local or cfg.get("remote_panel"))
+
+
+def operacion_admin_permitida(es_local, clave):
+    """Load / unload / rescan: always from the server PC; from another PC only when an API key protects the server."""
+    return bool(es_local or clave)
+
+
+def preparar_compartir(cfg, entorno=None):
+    """--share: listen on the whole network and make sure there is an API key.
+
+    Returns the key generated for this run (kept only in memory, never written to config.json),
+    or None when a key was already configured."""
+    entorno = os.environ if entorno is None else entorno
+    cfg["host"] = "0.0.0.0"
+    if (entorno.get("LLM_API_KEY") or cfg.get("api_key") or "").strip():
+        return None
+    clave = secrets.token_urlsafe(9)
+    entorno["LLM_API_KEY"] = clave
+    return clave
+
+
 class ErrorAPI(Exception):
     def __init__(self, codigo, mensaje, tipo="invalid_request_error", cabeceras=None):
         super().__init__(mensaje)
@@ -1327,7 +1420,7 @@ class Manejador(BaseHTTPRequestHandler):
         if self._ruta_publica():
             return None
         ruta = urllib.parse.urlparse(self.path).path.rstrip("/") or "/"
-        if (self.command in ("GET", "HEAD") and ruta in ("/", "/panel", "/engine")
+        if (self.command in ("GET", "HEAD") and ruta in ("/", "/panel", "/engine", "/chat")
                 and self.headers.get("Sec-Fetch-Mode") == "navigate"):
             return None
         if self._origen_ajeno():
@@ -1511,9 +1604,17 @@ class Manejador(BaseHTTPRequestHandler):
             self.end_headers()
             return
         if ruta in ("/", "/panel"):
+            if not panel_permitido(self._local(), ESTADO["cfg"]):
+                self.send_response(302)
+                self.send_header("Location", "/chat")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
             return self._archivo_estatico(os.path.join(WEB, "panel.html"))
         if ruta == "/engine":
             return self._archivo_estatico(os.path.join(WEB, "engine.html"))
+        if ruta == "/chat":
+            return self._archivo_estatico(os.path.join(WEB, "chat.html"))
         if ruta.startswith("/web/"):
             return self._archivo_estatico(os.path.join(WEB, *ruta[5:].split("/")))
         if ruta == "/v1/models":
@@ -1535,10 +1636,14 @@ class Manejador(BaseHTTPRequestHandler):
             m = reg.resolver(q)
             return self._json(200, {"requested": q, "model": reg.publico(m) if m else None})
         if ruta == "/api/logs":
+            if not panel_permitido(self._local(), ESTADO["cfg"]):
+                return self._error(403, "The log can only be read from the server PC")
             return self._json(200, list(LOG_MEMORIA))
         if ruta == "/api/architectures":
             return self._json(200, sorted(MANIFIESTOS.values(), key=lambda d: d["id"]))
         if ruta == "/api/config":
+            if not panel_permitido(self._local(), ESTADO["cfg"]):
+                return self._error(403, "The settings can only be read from the server PC")
             return self._json(200, self._config_publica())
         if ruta == "/api/folders":
             if not self._local():
@@ -1582,6 +1687,9 @@ class Manejador(BaseHTTPRequestHandler):
         puente, reg = ESTADO["puente"], ESTADO["registro"]
         if ruta.startswith("/v1/") or ruta in ("/api/load", "/api/unload", "/api/rescan"):
             self._autorizar()
+        if ruta in ("/api/load", "/api/unload", "/api/rescan") and not operacion_admin_permitida(self._local(), clave_api(ESTADO["cfg"])):
+            raise ErrorAPI(403, "Loading, unloading and rescanning from another PC require an API key. "
+                                "Set one (or start the server with --share) or do it from the server PC.")
         if ruta.startswith("/engine/api/"):
             if not self._local():
                 return self._error(403, "Only accessible from the server PC")
@@ -1637,7 +1745,8 @@ class Manejador(BaseHTTPRequestHandler):
         cfg = ESTADO["cfg"]
         return {"models_dir": cfg["models_dir"], "default_ctx": cfg["default_ctx"], "kv_max_mb": cfg["kv_max_mb"],
                 "timeout_seconds": cfg["timeout_seconds"], "port": cfg["port"],
-                "open_engine": bool(cfg.get("open_engine", True)),
+                "open_engine": bool(cfg.get("open_engine", True)), "chat_models": list(cfg.get("chat_models") or []),
+                "default_max_tokens": int(cfg.get("default_max_tokens") or 0), "max_tokens_limit": int(cfg.get("max_tokens_limit") or 0),
                 "memory_check": bool(cfg.get("memory_check", True)), "gpu_memory_gb": cfg.get("gpu_memory_gb", 0),
                 "max_queue": cfg.get("max_queue", 64), "api_key_set": bool(clave_api(cfg)),
                 "api_key_from_env": bool(os.environ.get("LLM_API_KEY")),
@@ -1651,6 +1760,18 @@ class Manejador(BaseHTTPRequestHandler):
         cambios, errores = validar_ajustes(self._cuerpo())
         if errores:
             raise ErrorAPI(400, "; ".join(errores))
+        if "model_overrides" in cambios:        # merge per model, keep other keys (e.g. ctx); None clears a value
+            actuales = cfg.get("model_overrides") or {}
+            fusion = {}
+            for mid, e in cambios["model_overrides"].items():
+                nuevo = dict(actuales.get(mid) or {})
+                for k, v in e.items():
+                    if v is None:
+                        nuevo.pop(k, None)
+                    else:
+                        nuevo[k] = v
+                fusion[mid] = nuevo
+            cambios["model_overrides"] = fusion
         puerto_nuevo = "port" in cambios and cambios["port"] != cfg["port"]
         carpeta_nueva = "models_dir" in cambios and os.path.normcase(cambios["models_dir"]) != os.path.normcase(os.path.abspath(cfg["models_dir"]))
         try:
@@ -1686,6 +1807,8 @@ class Manejador(BaseHTTPRequestHandler):
         return {
             "version": VERSION, "port": cfg["port"],
             "requires_key": bool(clave_api(cfg)), "pc_name": nombre_pc(), "from_server_pc": self._local(),
+            "share_key": ESTADO.get("clave_compartir") if self._local() else None,
+            "chat_models": list(cfg.get("chat_models") or []), "panel_allowed": panel_permitido(self._local(), cfg),
             "local_only": es_loopback(str(cfg.get("host", ""))),
             "reachable_at": self._direcciones(),
             "engine": {"connected": puente.motor_conectado(), "state": puente.motor.get("estado"),
@@ -1697,10 +1820,11 @@ class Manejador(BaseHTTPRequestHandler):
                                "seconds": round(time.time() - (activo.inicio or time.time()), 1)} if activo else None,
             "queued": len(puente.pendientes),
             "stats": {"requests": puente.stats["peticiones"], "tokens_generated": puente.stats["tokens_generados"],
-                      "errors": puente.stats["errores"]}, "history": list(puente.historial),
+                      "errors": puente.stats["errores"]},
+            "history": list(puente.historial) if panel_permitido(self._local(), cfg) else [],
             "models": [reg.publico(m) for m in reg.modelos],
             "models_dir": cfg["models_dir"] if self._local() else os.path.basename(os.path.normpath(cfg["models_dir"])),
-            "hardware": self._hardware_publico(),
+            "hardware": self._hardware_publico() if panel_permitido(self._local(), cfg) else {},
         }
 
     def _hardware_publico(self):
@@ -1765,14 +1889,15 @@ class Manejador(BaseHTTPRequestHandler):
             stops = [stops]
         defecto = cfg["default_sampling"]
         params = {}
+        gen = ajustes_generacion(cfg, m)
         for k in ("temperature", "top_k", "top_p", "min_p", "repeat_penalty"):
-            v = d.get(k, defecto.get(k))
+            v = d.get(k, gen["temperature"] if k == "temperature" else defecto.get(k))
             params[k] = float(v) if v is not None else None
         if d.get("frequency_penalty") or d.get("presence_penalty"):
             params["frequency_penalty"] = float(d.get("frequency_penalty") or 0)
             params["presence_penalty"] = float(d.get("presence_penalty") or 0)
         mt = d.get("max_tokens", d.get("max_completion_tokens"))
-        params["max_tokens"] = int(mt) if mt is not None and int(mt) > 0 else -1
+        params["max_tokens"] = max_tokens_efectivo(mt, gen["max_tokens"], gen["max_tokens_limit"])
         params["seed"] = int(d["seed"]) if d.get("seed") is not None else None
         params["top_k"] = int(params["top_k"]) if params.get("top_k") is not None else 0
         params["add_bos"] = False if incluye_bos else True
@@ -2130,6 +2255,8 @@ def main():
     ap.add_argument("--port", type=int, default=None)
     ap.add_argument("--host", default=None, help="127.0.0.1 = this PC only (default); 0.0.0.0 = whole network")
     ap.add_argument("--models-dir", default=None, help="models folder (overrides config.json)")
+    ap.add_argument("--share", action="store_true",
+                    help="share with your network: listens on 0.0.0.0 and, if no API key is set, generates one for this run")
     a = ap.parse_args()
     try:
         sys.stdout.reconfigure(errors="replace")
@@ -2143,9 +2270,10 @@ def main():
         cfg["host"] = a.host
     if a.models_dir:
         cfg["models_dir"] = a.models_dir
+    clave_nueva = preparar_compartir(cfg) if a.share else None
     reg = Registro(cfg)
     reg.escanear()
-    ESTADO.update(cfg=cfg, registro=reg, puente=Puente(reg), config_ruta=a.config)
+    ESTADO.update(cfg=cfg, registro=reg, puente=Puente(reg), config_ruta=a.config, clave_compartir=clave_nueva)
     try:
         srv = ServidorHTTP((cfg["host"], cfg["port"]), Manejador)
     except OSError as e:
@@ -2156,7 +2284,7 @@ def main():
     log.info("quipullm v%s listening on %s:%d", VERSION, cfg["host"], cfg["port"])
     threading.Thread(target=hosts_locales, daemon=True).start()   # resolves this PC's names in the background
     if es_loopback(str(cfg["host"])):
-        log.info("  Only reachable from this PC. For the network: \"host\": \"0.0.0.0\" (or --host 0.0.0.0) and an api_key.")
+        log.info("  Only reachable from this PC. For your team: python server.py --share (it creates an access key for you).")
     else:
         for ip in ips_locales():
             log.info("  Reachable at: http://%s:%d", ip, cfg["port"])
@@ -2164,6 +2292,11 @@ def main():
             log.info("  By name:      http://%s:%d/", nombre_pc(), cfg["port"])
         if not clave_api(cfg):
             log.warning("  The API is open to the whole network WITHOUT a key. Set api_key or LLM_API_KEY (see SECURITY.md).")
+        elif clave_nueva:
+            log.info("  Access key for this run (give it to your team): %s", clave_nueva)
+        if nombre_pc() or ips_locales():
+            log.info("  Chat page:    http://%s:%d/chat", nombre_pc() or ips_locales()[0], cfg["port"])
+        log.info("  Traffic is not encrypted (no TLS): share only on a network you trust.")
     log.info("  Panel:        http://localhost:%d/", cfg["port"])
     ESTADO["auto_relanzar"] = bool(cfg.get("open_engine", True) and not a.no_engine)
     if cfg.get("open_engine", True) and not a.no_engine:

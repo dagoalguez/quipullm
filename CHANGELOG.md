@@ -1,5 +1,28 @@
 # Changelog
 
+## 4.1.0
+- New **chat page** at `/chat` (plain text like the rest): streaming conversation with in-page history, stop button, system instruction, reasoning shown apart,
+  code blocks and copy button, queue/loading status, English/Spanish, light/dark. Messages are not stored on the server.
+- New `--share`: listens on `0.0.0.0` and, if no API key is set, creates one for that run (console and panel; never written to `config.json`).
+- Loading, unloading and rescanning models from another PC now requires an API key (they are refused on a keyless server).
+- Panel: "Open chat" button, chat link and a sharing status box (only this PC / shared with key / shared WITHOUT key), the API key next to the models folder,
+  advanced settings folded away, a hint toward the chat page in the test box.
+- Docs: README (EN/ES) reorganised ("Is it for you?" with what it does not fit, sharing section), status line and speed notes updated to the three measured machines.
+- Other PCs are sent from `/` to `/chat` and no longer see the panel, log, settings or request history (`remote_panel: true` restores the old behaviour).
+- The owner chooses which models the chat offers and in which order (panel Models table, `chat_models` in `config.json`); the first is the default.
+- Fix: the panel's Copy button did nothing over plain `http://` (browsers only allow the clipboard API on https or localhost); now it falls back to a method that works.
+  The chat page's Copy button got the same fix.
+- The panel shows one address to give your team (the IP address when there is one).
+- Chat: each code block has its own Copy button.
+- Chat: the message box no longer shows scroll arrows while its text is short.
+- The chat page no longer shows response-length or temperature boxes: both are set only by the owner (panel, global or per model).
+- Response length: new "Default response length" and "Response length limit" settings (general and per model), and a per-model temperature (panel Models card).
+  A request that asks for more than the limit is cut to the limit. The chat page and the panel's test box no longer force a temperature and 300–400 tokens:
+  with the boxes empty, the administrator's defaults apply.
+- The panel's *Open engine* button is disabled while an engine is connected (a second window took control, interrupted the running request and unloaded the model).
+- New `examples/agent-chat.html` (a small web chat agent over the API) and `docs/SETTINGS.md` (every setting explained).
+- Tests: `/chat` route, `--share` key preparation, remote admin rule, requests from another address (302 to the chat, 403 on log/settings, trimmed status), `chat_models`.
+
 ## 4.0.1
 - Fix: the engine could be declared disconnected (503 on every request, only F5 in the engine window recovered it). The engine window's long poll
   to `/engine/api/next` had no time limit; if the connection hung (network, suspend, browser freezing the window) it waited forever. Now it is cut after

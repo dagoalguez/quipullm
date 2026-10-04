@@ -31,7 +31,7 @@ async function cargarRegistro() {
   globalThis.__registroArch = REGISTRO;   // for the tests
   return REGISTRO;
 }
-const VERSION_MOTOR = "4.0.1";
+const VERSION_MOTOR = "4.1.0";
 const MARCADOR_IMAGEN = "<__media__>";
 
 const $ = (id) => document.getElementById(id);

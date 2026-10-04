@@ -51,6 +51,15 @@
   #explorador .lista div:hover { background:#eef6ff; }
   #cfgMsg.ok { color:var(--ok); } #cfgMsg.mal { color:var(--mal); }
   .controles { display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; }
+  .enlacechat { background:#0f5ea8; color:#fff; text-decoration:none; padding:5px 14px; border-radius:6px; font-size:13px; font-weight:600; }
+  .enlacechat:hover { background:#0c4d8a; }
+  .compartir { border-radius:6px; padding:8px 11px; margin-top:8px; border:1px solid var(--linea); background:#f6f8fa; }
+  .compartir.ok { background:#dafbe1; border-color:#9bd8ab; color:#14532d; }
+  .compartir.mal { background:#ffebe9; border-color:#f1a9a4; color:#82071e; }
+  .compartir code { user-select:all; background:#fff; padding:1px 6px; border-radius:4px; border:1px solid var(--linea); }
+  td.celdachat { white-space:nowrap; } td.celdachat input[type=checkbox] { width:auto; vertical-align:middle; margin-right:4px; } td.celdachat button { padding:2px 8px; }
+  details.avanzado { margin-top:10px; border-top:1px solid #eef0f3; padding-top:8px; }
+  details.avanzado > summary { cursor:pointer; color:var(--acento); font-weight:600; padding:2px 0; }
 </style>
 </head>
 <body>
@@ -59,6 +68,7 @@
   <span id="insMotor" class="insignia aviso" data-i="engineBadge"></span>
   <span id="insTrabajo" class="tenue"></span>
   <span style="flex:1"></span>
+  <a id="aChat" href="/chat" target="_blank" rel="noopener" class="enlacechat" data-i="openChat"></a>
   <select id="lang" aria-label="Language" style="width:auto;padding:3px 6px"><option value="en">English</option><option value="es">Español</option></select>
   <span class="tenue" id="version"></span>
 </header>
@@ -66,7 +76,9 @@
   <section class="tarjeta">
     <h2 data-i="reach"></h2>
     <div id="urls"></div>
-    <div class="tenue" style="margin-top:6px" data-ih="reachHelp"></div>
+    <div id="chatEnlaces" style="margin-top:6px"></div>
+    <div id="compartir"></div>
+    <div class="tenue" style="margin-top:8px" data-ih="reachHelp"></div>
   </section>
 
   <section class="tarjeta">
@@ -110,6 +122,9 @@
       <div class="lista" id="exLista"></div>
     </div>
     <div class="tenue" style="margin:2px 0 8px 178px" data-i="folderNote"></div>
+    <div class="campo"><label for="cClaveApi" data-i="apiKey"></label><input id="cClaveApi" type="password" autocomplete="new-password" data-iph="noChange"><span class="tenue" id="cClaveEstado"></span></div>
+    <details class="avanzado">
+      <summary data-i="advanced"></summary>
     <div class="rejilla">
       <div>
         <div class="campo"><label for="cCtx" data-i="defCtx"></label><input id="cCtx" type="number" min="256" step="256"><span class="tenue" data-i="tokens"></span></div>
@@ -119,7 +134,8 @@
         <div class="campo"><label for="cTimeout" data-i="timeout"></label><input id="cTimeout" type="number" min="30" step="30"><span class="tenue" data-i="timeoutHelp"></span></div>
         <div class="campo"><label for="cPuerto" data-i="port"></label><input id="cPuerto" type="number" min="1" max="65535"><span class="tenue" data-i="restart"></span></div>
         <div class="campo"><label for="cCola" data-i="maxQueue"></label><input id="cCola" type="number" min="0" step="1"><span class="tenue" data-i="maxQueueHelp"></span></div>
-        <div class="campo"><label for="cClaveApi" data-i="apiKey"></label><input id="cClaveApi" type="password" autocomplete="new-password" data-iph="noChange"><span class="tenue" id="cClaveEstado"></span></div>
+            <div class="campo"><label for="cMaxTok" data-i="defMaxTok"></label><input id="cMaxTok" type="number" min="0" step="64"><span class="tenue" data-i="defMaxTokHelp"></span></div>
+        <div class="campo"><label for="cMaxLim" data-i="maxTokLimit"></label><input id="cMaxLim" type="number" min="0" step="64"><span class="tenue" data-i="maxTokLimitHelp"></span></div>
         <div class="campo"><label for="cAbrir" data-i="openAtStart"></label><input id="cAbrir" type="checkbox"></div>
       </div>
       <div>
@@ -131,24 +147,34 @@
         <div class="campo"><label for="cRep" data-i="repPen"></label><input id="cRep" type="number" step="0.05" min="0.5" max="3"></div>
       </div>
     </div>
+    </details>
     <div class="controles"><button class="prim" id="btnGuardarCfg" data-i="save"></button><span id="cfgMsg"></span></div>
   </section>
 
   <section class="tarjeta ancha">
     <h2 data-i="models"></h2>
     <table>
-      <thead><tr><th data-i="thId"></th><th data-i="thArch"></th><th data-i="thQuant"></th><th data-i="thSize"></th><th data-i="thMem"></th><th data-i="thCtx"></th><th></th></tr></thead>
+      <thead><tr><th data-i="thId"></th><th data-i="thArch"></th><th data-i="thQuant"></th><th data-i="thSize"></th><th data-i="thMem"></th><th data-i="thCtx"></th><th data-i="thChat"></th><th></th></tr></thead>
       <tbody id="tablaModelos"></tbody>
     </table>
-    <div class="controles"><button id="btnEscanear" data-i="rescan"></button></div>
+    <details class="avanzado" id="detGen">
+      <summary data-i="genTitle"></summary>
+      <div class="tenue" style="margin:6px 0" data-ih="genNote"></div>
+      <table><thead><tr><th data-i="thModel"></th><th data-i="thTemp"></th><th data-i="thMaxTok"></th><th data-i="thMaxLim"></th></tr></thead>
+        <tbody id="tablaGen"></tbody></table>
+      <div class="controles"><button class="prim" id="btnGuardarGen" data-i="genSave"></button><span id="genMsg"></span></div>
+    </details>
+    <div class="tenue" style="margin-top:8px" data-ih="chatNote"></div>
+    <div class="controles"><button id="btnEscanear" data-i="rescan"></button><button id="btnChatTodos" data-i="chatAll"></button></div>
   </section>
 
   <section class="tarjeta ancha">
     <h2 data-i="test"></h2>
+    <div class="tenue" style="margin:-4px 0 8px" data-ih="tryHint"></div>
     <div class="controles" style="margin-top:0">
       <select id="pModelo" style="max-width:360px"></select>
-      <label class="tenue"><span data-i="lblTemp"></span> <input id="pTemp" type="number" step="0.1" min="0" max="2" value="0.7" style="width:70px"></label>
-      <label class="tenue"><span data-i="lblMax"></span> <input id="pMax" type="number" min="1" value="300" style="width:80px"></label>
+      <label class="tenue"><span data-i="lblTemp"></span> <input id="pTemp" type="number" step="0.1" min="0" max="5" placeholder="auto" style="width:70px"></label>
+      <label class="tenue"><span data-i="lblMax"></span> <input id="pMax" type="number" min="1" placeholder="auto" style="width:80px"></label>
     </div>
     <div class="controles" id="filaClave" style="display:none"><label class="tenue" for="pClave" data-i="keyRequired"></label>
       <input id="pClave" type="password" autocomplete="off" style="max-width:260px"></div>
@@ -178,6 +204,17 @@
 const $ = (id) => document.getElementById(id);
 const CLAVE = { get() { try { return localStorage.getItem("llm_clave") || ""; } catch { return ""; } }, set(v) { try { localStorage.setItem("llm_clave", v); } catch {} } };
 const cab = (extra = {}) => Object.assign({}, extra, CLAVE.get() ? { Authorization: "Bearer " + CLAVE.get() } : {});
+function copiar(txt, btn) {
+  const listo = () => { if (btn) { const o = btn.textContent; btn.textContent = t("copied"); setTimeout(() => { btn.textContent = o; }, 1200); } };
+  const respaldo = () => {
+    const x = document.createElement("textarea"); x.value = txt; x.style.position = "fixed"; x.style.opacity = "0";
+    document.body.append(x); x.select();
+    try { document.execCommand("copy"); listo(); } catch {}
+    x.remove();
+  };
+  // navigator.clipboard only exists on https:// or localhost; on http://192.168... the fallback is needed
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(txt).then(listo, respaldo); else respaldo();
+}
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const I18N = {
   en: {
@@ -188,7 +225,7 @@ const I18N = {
  "badgeOff": "engine: disconnected",
  "reach": "Reachable at",
  "reachHelp": "In your code, replace the LM Studio address with one of these (it ends in <span class=\"mono\">/v1</span>). The first uses the PC name and does not change when the IP changes; if your network does not resolve names, use the IP.",
- "localOnly": "This PC only. To open it to the network: \"host\": \"0.0.0.0\" in config.json plus an API key.",
+ "localOnly": "Reachable from this PC only.",
  "copy": "Copy",
  "engine": "Engine",
  "status": "Status",
@@ -236,9 +273,36 @@ const I18N = {
  "maxQueueHelp": "0 = unlimited; when full it answers 429",
  "apiKey": "API key",
  "noChange": "(unchanged)",
+ "openChat": "Open chat",
+ "advanced": "Advanced settings (context, memory, queue, port, sampling)",
+ "defMaxTok": "Default response length",
+ "defMaxTokHelp": "tokens · 0 = until the context is full",
+ "maxTokLimit": "Response length limit",
+ "maxTokLimitHelp": "tokens · 0 = no limit (the context still caps it)",
+ "genTitle": "Per-model defaults (temperature and response length)",
+ "genNote": "Leave a box empty to use the general setting (shown in grey). A request that sets its own temperature or max_tokens is respected, except that the limit always applies. The context size of the model also caps every response.",
+ "thTemp": "Temperature",
+ "thMaxTok": "Default response length (tokens)",
+ "thMaxLim": "Limit (tokens)",
+ "genSave": "Save model defaults",
+ "genSaved": "Saved.",
+ "openEngineBusy": "The engine is already open. Opening another one would interrupt the current work and unload the model.",
+ "chatFor": "Address for your team (it opens the chat):",
+ "thChat": "In chat",
+ "chatNote": "Tick the models your team will see in the chat and order them with the arrows: the first one is the default. This only shapes the chat page; the API still lists every model. Once you choose, new models stay hidden until you tick them.",
+ "chatAll": "Show all models in chat",
+ "chatDefault": "default",
+ "chatLast": "At least one model must stay in the chat.",
+ "copied": "Copied",
+ "tryHint": "Quick check of one question. For a conversation with history, use the <a href=\"/chat\" target=\"_blank\" rel=\"noopener\">chat page</a>.",
+ "shareLocal": "Only this PC can reach the server. To share it with your team, stop it and start it with <code>python server.py --share</code>: it opens the network and creates an access key.",
+ "shareKeyOk": "Shared on the network. An API key is required to use the models.",
+ "shareKeyNew": "Access key for this run (give it to your team):",
+ "shareOpen": "Shared on the network WITHOUT an API key: anyone who can reach this PC can use your GPU. Set an API key below, or restart with <code>--share</code>.",
+ "shareNoTls": "Traffic is not encrypted (HTTP): share only on a network you trust.",
  "keyEnv": "set by the LLM_API_KEY variable",
- "keySet": "set · type \"-\" to remove it",
- "keyNone": "no key: the API is open on the network",
+ "keySet": "Key is set: other PCs must send it. Type a new one to change it, or - to remove it.",
+ "keyNone": "No key. If you share this server, anyone on your network could use it.",
  "openAtStart": "Open the engine at startup",
  "sampling": "Default sampling (when the request does not specify it)",
  "temp": "Temperature",
@@ -272,7 +336,7 @@ const I18N = {
  "test": "Try it",
  "lblTemp": "temperature",
  "lblMax": "max. tokens",
- "keyRequired": "API key (the server requires it)",
+ "keyRequired": "The server asks for an access key:",
  "defaultPrompt": "Explain what a database is in 3 sentences.",
  "send": "Send",
  "stop": "Stop",
@@ -309,7 +373,7 @@ const I18N = {
  "badgeOff": "motor: desconectado",
  "reach": "Direcciones (accesible en)",
  "reachHelp": "En el código reemplaza la dirección de LM Studio por una de estas (termina en <span class=\"mono\">/v1</span>). La primera usa el nombre de la PC y no cambia aunque cambie la IP; si tu red no resuelve nombres, usa la IP.",
- "localOnly": "Solo este PC. Para la red: \"host\": \"0.0.0.0\" en config.json y una clave de API.",
+ "localOnly": "Accesible solo desde esta PC.",
  "copy": "Copiar",
  "engine": "Motor",
  "status": "Estado",
@@ -357,9 +421,36 @@ const I18N = {
  "maxQueueHelp": "0 = sin límite; al llenarse responde 429",
  "apiKey": "Clave de API",
  "noChange": "(sin cambios)",
- "keyEnv": "fijada por la variable LLM_API_KEY",
- "keySet": "definida · escribe «-» para quitarla",
- "keyNone": "sin clave: la API está abierta en la red",
+ "openChat": "Abrir chat",
+ "advanced": "Ajustes avanzados (contexto, memoria, cola, puerto, muestreo)",
+ "defMaxTok": "Longitud de respuesta por defecto",
+ "defMaxTokHelp": "tokens · 0 = hasta llenar el contexto",
+ "maxTokLimit": "Límite de longitud de respuesta",
+ "maxTokLimitHelp": "tokens · 0 = sin límite (el contexto igual la limita)",
+ "genTitle": "Valores por modelo (temperatura y longitud de respuesta)",
+ "genNote": "Deja una casilla vacía para usar el ajuste general (se ve en gris). Si una petición trae su propia temperatura o max_tokens se respeta, salvo que el límite siempre se aplica. El tamaño de contexto del modelo también limita cada respuesta.",
+ "thTemp": "Temperatura",
+ "thMaxTok": "Longitud por defecto (tokens)",
+ "thMaxLim": "Límite (tokens)",
+ "genSave": "Guardar valores por modelo",
+ "genSaved": "Guardado.",
+ "openEngineBusy": "El motor ya está abierto. Abrir otro interrumpiría el trabajo actual y descargaría el modelo.",
+ "chatFor": "Dirección para tu equipo (abre el chat):",
+ "thChat": "En el chat",
+ "chatNote": "Marca los modelos que verá tu equipo en el chat y ordénalos con las flechas: el primero es el predeterminado. Esto solo da forma a la página de chat; la API sigue listando todos los modelos. Una vez que eliges, los modelos nuevos quedan ocultos hasta que los marques.",
+ "chatAll": "Mostrar todos los modelos en el chat",
+ "chatDefault": "predeterminado",
+ "chatLast": "Debe quedar al menos un modelo en el chat.",
+ "copied": "Copiado",
+ "tryHint": "Prueba rápida de una pregunta. Para una conversación con historial usa la <a href=\"/chat\" target=\"_blank\" rel=\"noopener\">página de chat</a>.",
+ "shareLocal": "Solo esta PC puede acceder al servidor. Para compartirlo con tu equipo, ciérralo y arráncalo con <code>python server.py --share</code>: abre la red y crea una clave de acceso.",
+ "shareKeyOk": "Compartido en la red. Se necesita una clave de API para usar los modelos.",
+ "shareKeyNew": "Clave de acceso de esta ejecución (dásela a tu equipo):",
+ "shareOpen": "Compartido en la red SIN clave de API: cualquiera que llegue a esta PC puede usar tu GPU. Pon una clave de API abajo o reinicia con <code>--share</code>.",
+ "shareNoTls": "El tráfico no va cifrado (HTTP): compártelo solo en una red de confianza.",
+ "keyEnv": "definida por la variable LLM_API_KEY",
+ "keySet": "Clave definida: las otras PC deben enviarla. Escribe una nueva para cambiarla, o - para quitarla.",
+ "keyNone": "Sin clave. Si compartes este servidor, cualquiera en tu red podría usarlo.",
  "openAtStart": "Abrir el motor al iniciar",
  "sampling": "Muestreo por defecto (cuando la petición no lo indica)",
  "temp": "Temperatura",
@@ -393,7 +484,7 @@ const I18N = {
  "test": "Probar",
  "lblTemp": "temperatura",
  "lblMax": "máx. tokens",
- "keyRequired": "Clave de API (el servidor la exige)",
+ "keyRequired": "El servidor pide una clave de acceso:",
  "defaultPrompt": "Explica qué es una base de datos en 3 frases.",
  "send": "Enviar",
  "stop": "Detener",
@@ -434,7 +525,7 @@ function aplicarIdioma() {
   document.querySelectorAll("[data-iph]").forEach((e) => { e.placeholder = t(e.dataset.iph); });
   $("lang").value = LANG;
 }
-let ultimoModelos = "", REMOTO = false, cfgCargada = false;
+let ultimoModelos = "", REMOTO = false, cfgCargada = false, claveRechazada = false;
 const TXT_MEM = { fits: ["si", "memFits"], tight: ["aviso", "memTight"], no_fit: ["no", "memNoFit"], unknown: ["", "memUnknown"] };
 function memoria(x) {
   if (!x.memory) return '<span class="tenue">—</span>';
@@ -450,10 +541,10 @@ async function refrescar() {
   catch { $("insMotor").className = "insignia mal"; $("insMotor").textContent = t("badgeDown"); return; }
   $("version").textContent = "v" + st.version;
   REMOTO = !st.from_server_pc;
-  $("filaClave").style.display = st.requires_key ? "flex" : "none";
+  $("filaClave").style.display = st.requires_key && (!CLAVE.get() || claveRechazada) ? "flex" : "none";
   document.querySelectorAll("#nPc, .nPc").forEach((e) => { e.textContent = st.pc_name || t("serverPc"); });
-  $("btnAbrir").disabled = REMOTO;
-  $("btnAbrir").title = REMOTO ? t("openEngineRemote") : t("openEngineTip");
+  $("btnAbrir").disabled = REMOTO || st.engine.connected;
+  $("btnAbrir").title = REMOTO ? t("openEngineRemote") : (st.engine.connected ? t("openEngineBusy") : t("openEngineTip"));
   $("cfgAviso").style.display = REMOTO ? "block" : "none";
   if (!cfgCargada) cargarCfg();
   const m = st.engine;
@@ -476,9 +567,18 @@ async function refrescar() {
   $("sPet").textContent = st.stats.requests; $("sTok").textContent = st.stats.tokens_generated; $("sErr").textContent = st.stats.errors;
   $("sDir").textContent = st.models_dir;
   $("urls").innerHTML = (st.reachable_at.length ? st.reachable_at : ["http://localhost:" + st.port]).map((u) =>
-    `<div class="url"><span>${esc(u)}</span><button onclick="navigator.clipboard.writeText('${esc(u)}')">${esc(t("copy"))}</button></div>`).join("");
+    `<div class="url"><span>${esc(u)}</span><button onclick="copiar('${esc(u)}', this)">${esc(t("copy"))}</button></div>`).join("");
   if (st.local_only) $("urls").innerHTML += '<div class="tenue" style="margin-top:6px">' + esc(t("localOnly")) + '</div>';
-  const firma = JSON.stringify([st.models, m.loaded_model, LANG]);
+  const base = (st.reachable_at[0] || "http://localhost:" + st.port);
+  const compartirUrl = st.reachable_at.find((u) => /^https?:\/\/\d+\.\d+\.\d+\.\d+(:\d+)?$/.test(u)) || base;
+  $("chatEnlaces").innerHTML = st.local_only ? "" : `<b>${esc(t("chatFor"))}</b><div class="url" style="margin-top:6px"><span>${esc(compartirUrl)}</span><button onclick="copiar('${esc(compartirUrl)}', this)">${esc(t("copy"))}</button></div>`;
+  let cl = "compartir", html;
+  if (st.local_only) html = t("shareLocal");
+  else if (!st.requires_key) { cl += " mal"; html = t("shareOpen") + "<br>" + esc(t("shareNoTls")); }
+  else { cl += " ok"; html = esc(t("shareKeyOk")) + (st.share_key ? `<br>${esc(t("shareKeyNew"))} <code>${esc(st.share_key)}</code>` : "") + "<br>" + esc(t("shareNoTls")); }
+  $("compartir").className = cl; $("compartir").innerHTML = html;
+  ULTIMO_ST = st;
+  const firma = JSON.stringify([st.models, m.loaded_model, LANG, st.chat_models, REMOTO]);
   if (firma !== ultimoModelos) {
     ultimoModelos = firma;
     $("tablaModelos").innerHTML = st.models.map((x) => {
@@ -486,9 +586,10 @@ async function refrescar() {
         : `<span class="etq no">${x.embedding ? t("embeddings") : ""}${PROXIMA[x.arch] || t("unsupported")}</span>`;
       return `<tr class="${m.loaded_model === x.id ? "cargado" : ""}">
         <td class="mono" title="${esc(t("alsoAnswers") + x.match_keys.join(", "))}">${esc(x.id)}${x.vision_ok ? `<span class="etq si">${t("vision")}</span>` : (x.vision ? `<span class="etq no" title="${esc(t("visionBadTip"))}">${t("visionBad")}</span>` : "")}<div class="tenue" style="font-size:12px">${esc(x.file)}</div></td>
-        <td>${esc(x.arch)} ${est}</td><td class="mono">${esc(x.quantization)}</td><td class="mono">${x.gb} GB</td><td>${memoria(x)}</td><td class="mono">${x.ctx}</td>
+        <td>${esc(x.arch)} ${est}</td><td class="mono">${esc(x.quantization)}</td><td class="mono">${x.gb} GB</td><td>${memoria(x)}</td><td class="mono">${x.ctx}</td><td class="celdachat">${celdaChat(x, st)}</td>
         <td>${x.supported ? `<button onclick="cargar('${esc(x.id)}')">${esc(t("load"))}</button>` : ""}</td></tr>`;
-    }).join("") || `<tr><td colspan="7" class="tenue">${t("noModels")}</td></tr>`;
+    }).join("") || `<tr><td colspan="8" class="tenue">${t("noModels")}</td></tr>`;
+    renderGen(st);
     const sel = $("pModelo"), prev = sel.value;
     sel.innerHTML = st.models.filter((x) => x.supported).map((x) => `<option>${esc(x.id)}</option>`).join("");
     if (prev) sel.value = prev; else if (m.loaded_model) sel.value = m.loaded_model;
@@ -503,6 +604,55 @@ async function refrescarLogs() {
     $("logs").innerHTML = l.slice().reverse().map((x) => `<div class="${x.level}">${x.time}  ${esc(x.message)}</div>`).join("");
   } catch {}
 }
+
+let ULTIMO_ST = null;
+function renderGen(st) {
+  const aptos = st.models.filter((x) => x.supported && !x.embedding);
+  const tg = $("cTemp").value, mt = $("cMaxTok").value || "0", lim = $("cMaxLim").value || "0";
+  const val = (x, k) => (x.overrides && x.overrides[k] != null ? x.overrides[k] : "");
+  const inp = (x, k, ph, step) => `<input type="number" min="0" step="${step}" data-id="${esc(x.id)}" data-k="${k}" value="${esc(val(x, k))}" placeholder="${esc(ph)}" ${REMOTO ? "disabled" : ""} style="width:110px">`;
+  $("tablaGen").innerHTML = aptos.map((x) => `<tr><td class="mono">${esc(x.id)}</td>
+    <td>${inp(x, "temperature", tg || x.gen.temperature, "0.05")}</td><td>${inp(x, "max_tokens", mt, "64")}</td><td>${inp(x, "max_tokens_limit", lim, "64")}</td></tr>`).join("");
+}
+$("btnGuardarGen").onclick = async () => {
+  const mo = {};
+  document.querySelectorAll("#tablaGen input").forEach((i) => { (mo[i.dataset.id] = mo[i.dataset.id] || {})[i.dataset.k] = i.value === "" ? null : i.value; });
+  const r = await fetch("/api/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model_overrides: mo }) });
+  const j = await r.json();
+  $("genMsg").textContent = r.ok ? t("genSaved") : j.error.message; $("genMsg").className = r.ok ? "ok" : "mal";
+  ultimoModelos = ""; refrescar();
+};
+const aptosChat = (st) => st.models.filter((x) => x.supported && !x.embedding).map((x) => x.id);
+function chatEfectivos(st) {
+  const todos = aptosChat(st);
+  const f = st.chat_models && st.chat_models.length ? st.chat_models.filter((id) => todos.includes(id)) : [];
+  return f.length ? f : todos;
+}
+function celdaChat(x, st) {
+  if (!x.supported || x.embedding) return '<span class="tenue">—</span>';
+  const ef = chatEfectivos(st), pos = ef.indexOf(x.id), dis = REMOTO ? "disabled" : "";
+  const flechas = pos < 0 ? "" : ` <button ${dis} data-id="${esc(x.id)}" onclick="chatMover(this.dataset.id,-1)" ${pos === 0 ? "disabled" : ""}>↑</button><button ${dis} data-id="${esc(x.id)}" onclick="chatMover(this.dataset.id,1)" ${pos === ef.length - 1 ? "disabled" : ""}>↓</button>`
+    + (pos === 0 ? ` <span class="etq si">${esc(t("chatDefault"))}</span>` : "");
+  return `<input type="checkbox" ${pos >= 0 ? "checked" : ""} ${dis} data-id="${esc(x.id)}" onchange="chatAlternar(this.dataset.id,this.checked)">${flechas}`;
+}
+async function chatGuardar(lista) {
+  const r = await fetch("/api/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_models: lista }) });
+  if (!r.ok) alert((await r.json()).error.message);
+  ultimoModelos = ""; refrescar();
+}
+function chatAlternar(id, on) {
+  const ef = chatEfectivos(ULTIMO_ST).slice();
+  if (on && !ef.includes(id)) ef.push(id);
+  if (!on) { const i = ef.indexOf(id); if (i >= 0) ef.splice(i, 1); if (!ef.length) { alert(t("chatLast")); ultimoModelos = ""; refrescar(); return; } }
+  chatGuardar(ef);
+}
+function chatMover(id, d) {
+  const ef = chatEfectivos(ULTIMO_ST).slice(), i = ef.indexOf(id), j = i + d;
+  if (i < 0 || j < 0 || j >= ef.length) return;
+  [ef[i], ef[j]] = [ef[j], ef[i]];
+  chatGuardar(ef);
+}
+$("btnChatTodos").onclick = () => chatGuardar([]);
 
 async function cargar(id) {
   const r = await fetch("/api/load", { method: "POST", headers: cab({ "Content-Type": "application/json" }), body: JSON.stringify({ model: id }) });
@@ -528,10 +678,14 @@ $("btnEnviar").onclick = async () => {
   try {
     const r = await fetch("/v1/chat/completions", {
       method: "POST", headers: cab({ "Content-Type": "application/json" }), signal: control.signal,
-      body: JSON.stringify({ model: $("pModelo").value, stream: true, temperature: +$("pTemp").value,
-        max_tokens: +$("pMax").value, messages: [{ role: "user", content: $("pTexto").value }] }),
+      body: JSON.stringify(Object.assign({ model: $("pModelo").value, stream: true, messages: [{ role: "user", content: $("pTexto").value }] },
+        $("pTemp").value !== "" ? { temperature: +$("pTemp").value } : {}, $("pMax").value !== "" ? { max_tokens: +$("pMax").value } : {})),
     });
-    if (!r.ok) { salida.textContent = t("error") + (await r.json()).error.message; return; }
+    if (!r.ok) {
+      if (r.status === 401) { claveRechazada = true; $("filaClave").style.display = "flex"; }
+      salida.textContent = t("error") + (await r.json()).error.message; return;
+    }
+    claveRechazada = false;
     const lector = r.body.getReader(), dec = new TextDecoder();
     let buf = "";
     for (;;) {
@@ -567,7 +721,7 @@ $("btnEnviar").onclick = async () => {
     $("btnEnviar").disabled = false; $("btnParar").disabled = true;
   }
 };
-const CFG_CAMPOS = { cCarpeta: "models_dir", cCtx: "default_ctx", cKv: "kv_max_mb", cMemGpu: "gpu_memory_gb", cTimeout: "timeout_seconds", cCola: "max_queue", cPuerto: "port" };
+const CFG_CAMPOS = { cCarpeta: "models_dir", cCtx: "default_ctx", cKv: "kv_max_mb", cMemGpu: "gpu_memory_gb", cTimeout: "timeout_seconds", cCola: "max_queue", cPuerto: "port", cMaxTok: "default_max_tokens", cMaxLim: "max_tokens_limit" };
 const CFG_MUESTREO = { cTemp: "temperature", cTopK: "top_k", cTopP: "top_p", cMinP: "min_p", cRep: "repeat_penalty" };
 function msgCfg(t, ok) { $("cfgMsg").textContent = t; $("cfgMsg").className = ok ? "ok" : "mal"; }
 async function cargarCfg() {
