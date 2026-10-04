@@ -149,6 +149,8 @@ One process, one engine, one request at a time (others wait in a queue). Details
 
 ## How it is verified
 
+Write-up of the method and what it found: [docs/validation-article.md](docs/validation-article.md).
+
 Each architecture is compared with llama.cpp using small synthetic models (random weights) quantized by llama.cpp itself: token
 ids must be identical, last-token logits must match the dequantized F32 reference (relative difference below `2e-3`), and
 greedy generation and the full HTTP path must produce the same text. Negative controls (for example, disabling the sliding window)

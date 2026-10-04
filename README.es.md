@@ -147,6 +147,8 @@ Un proceso, un motor, una petición a la vez (las demás esperan en cola). Detal
 
 ## Cómo se verifica
 
+Artículo con el método y lo que encontró: [docs/validation-article.es.md](docs/validation-article.es.md).
+
 Cada arquitectura se compara con llama.cpp usando modelos sintéticos pequeños (pesos aleatorios) cuantizados por el propio
 llama.cpp: los ids de tokens deben ser idénticos, los logits del último token deben coincidir con la referencia F32 decuantizada
 (diferencia relativa < `2e-3`) y la generación voraz y todo el camino HTTP deben dar el mismo texto. Los controles negativos
