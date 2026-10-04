@@ -21,7 +21,7 @@ Lee archivos **GGUF** estándar y sus rutas de texto y de embeddings se comparan
 
 ![Página de chat](docs/img/chat.png)
 
-> **Estado: versión temprana (4.0.x).** Medido en tres máquinas: Windows con GPU integrada Intel (comparada con LM Studio),
+> **Estado: versión temprana (4.1.x).** Medido en tres máquinas: Windows con GPU integrada Intel (comparada con LM Studio),
 > Windows con una GTX 1050 Ti y un portátil Linux antiguo con Intel HD 4000 (las dos últimas con solo dos corridas por modelo). AMD, Apple y
 > GPU Linux recientes **no están medidas**. Todo lo que sabemos que falta o está flojo está en [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 

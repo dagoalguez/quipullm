@@ -59,7 +59,7 @@
 - `models_dir` defaults to `models/` next to `server.py` (relative paths resolve there); `tools/verify.py` works out of the box.
 - `docs/BENCHMARKS.md` (measured numbers only), `tools/bench.py`, Spanish README (`README.es.md`).
 
-## 3.x (internal line)
+## Before 4.0 (development history)
 - 3.4.x: DeepSeek grouped-expert prefill, Gemma 3 vision, faster ViT attention.
 - 3.3: DeepSeek-Coder-V2-Lite. 3.2: LFM2-VL vision. 3.1: embeddings. 3.0: Gemma 3 text.
 - 2.x: generic transformer (qwen2/llama/granite) and K-quants. 1.x: LFM2 family.
