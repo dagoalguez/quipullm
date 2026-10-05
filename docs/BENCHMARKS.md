@@ -83,18 +83,24 @@ Before tiled prefill (v2.1.1) a 43-token prompt on qwen 7B took about 10 s for t
 
 ## Tool calling (experimental)
 
-Measured on 2026-10-04 with a development version after 4.1.0 (not yet released), on the **Windows PC** of the table above: Intel Core i5-8400, NVIDIA GeForce GTX 1050 Ti 4 GB (driver 32.0.15.6094),
-15.9 GiB RAM, Windows 11 Pro 25H2 (build 26200.6584), Microsoft Edge 154.0.4258.53. Script: `tools/probar_tools.py`, temperature 0, **5 runs**.
+Measured on 2026-10-04 and 2026-10-05 with a development version after 4.1.0 (not yet released), on the **Windows PC** of the table above: Intel Core i5-8400, NVIDIA GeForce GTX 1050 Ti 4 GB
+(driver 32.0.15.6094), 15.9 GiB RAM, Windows 11 Pro 25H2 (build 26200.6584), Microsoft Edge 154.0.4258.53. Model: lfm2.5-1.2b-instruct (Q8_0). Script: `tools/probar_tools.py`, temperature 0.
+**Three runs of each kind** (different questions each), so these are small smoke tests, not rates.
 
-Each run asks a weather question with one tool (`get_weather(city)`), checks for a valid tool call, sends a fake tool result and checks that the model answers in text.
+Two tools are offered (`get_weather(city)`, `get_time(city)`). "Weather" and "time" ask a question that needs one of them: the model must call the right tool with a city, and then, given a fake result, answer in text using it.
+"No tool" asks a question that needs none ("What is 2 + 2?", "Say hello in French.", "Name the capital of Italy."): the model must answer correctly in text without calling a tool.
+"Control" asks the same "no tool" questions without sending any tools.
 
-| Model | Valid tool call | Text answer after the result | Time per run (2 requests) |
-|---|---|---|---|
-| lfm2.5-1.2b-instruct (Q8_0) | 5/5 | 5/5 | 22–24 s |
+| Instruction the server adds to the system message | Weather | Time | No tool (tools offered) | Control (no tools) |
+|---|---|---|---|---|
+| First wording ("You can use these tools: ... Use a tool only when you need it") | 3/3 | 3/3 | **0/3** (it refused: "I can't calculate mathematical expressions") | 3/3 |
+| Current wording (answer from your own knowledge first; tools are optional extras) | 3/3 | 3/3 | **2/3** (one refusal, the French greeting) | 3/3 |
 
-What this does **not** tell: whether the model picks the right tool among several, whether it avoids calling a tool when none is needed, harder arguments, streaming with real models, or any other model.
-The model wrote its calls in its own native format (`<|tool_call_start|>[get_weather(city="Lima")]<|tool_call_end|>`), which the server understands.
-A 7B Qwen2.5-Coder model was refused on this PC by the memory check (about 5.0 GB needed against 3.9 GB estimated), so no 7B result exists.
+Before these, a one-tool, weather-only run of the first wording gave 5/5 valid calls and 5/5 text answers after the result (22–24 s per run).
+
+- With tools offered, a request takes longer even when no tool is used: about 14 s for a "no tool" question against 1–3 s for the same question without tools, and 27–33 s for the two-request tool cases. The longer prompt is reprocessed on every request (there is no prompt caching).
+- The model wrote its calls in its own native format (`<|tool_call_start|>[get_weather(city="Lima")]<|tool_call_end|>`), which the server understands.
+- A 7B Qwen2.5-Coder model was refused on this PC by the memory check (about 5.0 GB needed against 3.9 GB estimated), so there is no 7B result.
 
 ## Vision
 
@@ -112,7 +118,7 @@ nomic-embed-text-v1.5: vector norm 1, similarities as expected, 0.05 s per short
 
 - Any AMD GPU (discrete or integrated), any Apple or macOS machine, any Linux machine with a recent GPU.
 - LM Studio on the two machines in "Other machines"; Gemma 3 4B and the 7–8 B models on the Linux laptop; more than two runs per model on those machines.
-- Tool calling with any model other than lfm2.5-1.2b-instruct, with more than one tool, or on a prompt that needs no tool.
+- Tool calling with any model other than lfm2.5-1.2b-instruct, with more than two tools, harder arguments, several calls in one answer, or streaming with a real model; more than three runs of each kind.
 - More than one simultaneous user (requests queue; one engine).
 - DeepSeek-Coder-V2-Lite generation speed beyond the 36 s total above.
 - Memory autoadjust thresholds on other hardware.

@@ -43,7 +43,7 @@ WebGPU; the machine we measured against LM Studio is exactly that case. A dedica
 
 - **Fast answers from 7–8B models on an integrated GPU:** about 2–3 tokens/s on the one we measured.
 - **Many simultaneous users:** it serves one request at a time; the rest wait.
-- **Agents or structured output:** experimental tool calling only (generic text format, not measured on real models yet) and no enforced JSON schema.
+- **Agents or structured output:** experimental tool calling only (generic text format, tried with one 1.2B model on one PC: see [BENCHMARKS](docs/BENCHMARKS.md)) and no enforced JSON schema.
 - **A server with no screen:** the engine needs a browser window open on the server PC.
 - **Anything that needs a certification, an external security audit or encrypted traffic:** it has none of them (no TLS).
   Prompts stay on your machine and we found no outgoing connections, but that is a check, not an audit; review it yourself.

@@ -502,6 +502,8 @@ def main():
         pr = motor.recibidos[-1]["prompt"]
         check("tools: el prompt lleva la instrucción con las herramientas, en el mensaje de sistema",
               "get_weather" in pr and "[TOOL_REQUEST]" in pr and pr.find("get_weather") < pr.find("TOOLCALL"), pr[:300])
+        check("tools: la instrucción pide seguir contestando con su conocimiento (las herramientas son opcionales) y no rechazar",
+              "from your own knowledge" in pr and "Never refuse" in pr and pr.find("from your own knowledge") < pr.find("get_weather"), pr[:400])
         _, lineas = c.stream("/v1/chat/completions", {"model": "lfm2-1.2b-rag", "stream": True, "messages": msg_tc, "tools": herramientas})
         ch = chunks(lineas)
         deltas = [x["choices"][0]["delta"] for x in ch]

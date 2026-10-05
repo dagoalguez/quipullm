@@ -15,7 +15,7 @@
 - KV cache is f32.
 - Tool calling is **experimental** and generic (LM Studio "default mode" style): tools go into the system message and the model must write
   `[TOOL_REQUEST]{...}[END_TOOL_REQUEST]`; the server parses it into `tool_calls`. It also accepts the native formats of LFM2 (`<|tool_call_start|>[f(a="x")]<|tool_call_end|>`) and Qwen/Hermes (`<tool_call>{...}</tool_call>`); other native formats are not recognised. There is no constrained decoding, so a model that ignores the format
-  simply answers in text. Only tested with the simulated engine; **not measured on real models.** Generation stops at `[TOOL_RESULT]`.
+  simply answers in text. Small models can refuse ordinary questions once tools are offered: with lfm2.5-1.2b-instruct, 1 of 3 test questions was refused with the current instruction and 3 of 3 with the first one (same questions answered fine without tools). Measured only with that model on one PC, see [BENCHMARKS.md](BENCHMARKS.md). Generation stops at `[TOOL_RESULT]`.
 - No grammar-constrained or JSON-schema-enforced output. `response_format: json_object` returns 400
   (as LM Studio did); `json_schema` is accepted but not enforced.
 - Not implemented: logprobs, `n > 1`, multiple models loaded at once.

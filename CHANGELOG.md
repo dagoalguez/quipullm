@@ -4,7 +4,7 @@
 - **Experimental tool calling** (`tools` / `tool_choice` / `tool` messages / `tool_calls`), LM Studio "default mode" style: the tools are described in the
   system message, the model writes `[TOOL_REQUEST]{...}[END_TOOL_REQUEST]`, the server turns it into OpenAI `tool_calls` (`finish_reason: "tool_calls"`, also when streaming)
   and tool results come back as `[TOOL_RESULT]` text. Calls written in the model's own native format are also understood:
-  LFM2 (`<|tool_call_start|>[f(a="x")]<|tool_call_end|>`, literals only, nothing is executed) and Qwen/Hermes (`<tool_call>{json}</tool_call>`). No constrained decoding: whether a model follows the format depends on the model and has **not been measured** on real models yet.
+  LFM2 (`<|tool_call_start|>[f(a="x")]<|tool_call_end|>`, literals only, nothing is executed) and Qwen/Hermes (`<tool_call>{json}</tool_call>`). The instruction tells the model to keep answering from its own knowledge and treat the tools as optional (with the first wording, lfm2.5-1.2b-instruct refused 3 of 3 questions that needed no tool; with this one, 1 of 3). No constrained decoding: whether a model follows the format depends on the model; see docs/BENCHMARKS.md for what was measured.
 
 ## 4.1.0
 - New **chat page** at `/chat` (plain text like the rest): streaming conversation with in-page history, stop button, system instruction, reasoning shown apart,

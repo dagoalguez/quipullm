@@ -43,7 +43,7 @@ por hardware; la máquina con la que comparamos contra LM Studio es justo ese ca
 
 - **Respuestas rápidas con modelos de 7–8B en una GPU integrada:** unos 2–3 tokens/s en la que medimos.
 - **Muchos usuarios a la vez:** atiende una petición a la vez; las demás esperan.
-- **Agentes o salida estructurada:** tool calling solo experimental (formato de texto genérico, aún sin medir en modelos reales) y sin JSON schema forzado.
+- **Agentes o salida estructurada:** tool calling solo experimental (formato de texto genérico, probado con un modelo de 1.2B en un PC: ver [BENCHMARKS](docs/BENCHMARKS.md)) y sin JSON schema forzado.
 - **Un servidor sin pantalla:** el motor necesita una ventana del navegador abierta en la PC servidora.
 - **Lo que exija certificación, auditoría de seguridad externa o tráfico cifrado:** no tiene nada de eso (sin TLS).
   Los prompts se quedan en tu máquina y no encontramos conexiones salientes, pero eso es una comprobación, no una auditoría; revísalo tú.

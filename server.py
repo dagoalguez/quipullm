@@ -1065,11 +1065,13 @@ def validar_herramientas(d):
 def instruccion_herramientas(tools, choice):
     lista = json.dumps([{"name": t["name"], "description": t["description"], "parameters": t["parameters"]} for t in tools],
                        ensure_ascii=False)
-    txt = ("You can use these tools:\n%s\n\nTo use a tool, write exactly this and nothing else after it:\n"
+    txt = ("Answer every question you can from your own knowledge, directly and as you normally would (maths, languages, facts, writing, code). "
+           "Never refuse a question because it is not about the tools.\n\n"
+           "You also have these optional tools, for things you cannot know yourself, such as live data:\n%s\n\n"
+           "Only when a question needs one of them, write exactly this and nothing else after it:\n"
            "%s{\"name\": \"tool_name\", \"arguments\": {\"argument\": \"value\"}}%s\n"
-           "The result will arrive in the next message between %s and %s. "
-           "Use a tool only when you need it; otherwise answer normally." % (lista, MARCA_PEDIDO, MARCA_FIN_PEDIDO,
-                                                                                MARCA_RESULTADO, MARCA_FIN_RESULTADO))
+           "The result will arrive in the next message between %s and %s." % (lista, MARCA_PEDIDO, MARCA_FIN_PEDIDO,
+                                                                              MARCA_RESULTADO, MARCA_FIN_RESULTADO))
     if choice == "required":
         txt += "\nYou MUST request a tool call in your next answer."
     elif isinstance(choice, dict):
