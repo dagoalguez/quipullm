@@ -88,6 +88,7 @@
   </div>
   <div class="pie">
     <a href="#" id="verSistema"></a>
+    <span id="ctxInfo"></span>
   </div>
   <textarea id="sistema" hidden></textarea>
   <div class="privacidad" id="privacidad"></div>
@@ -106,7 +107,7 @@ const TXT = {
     ready: "ready", working: "busy", off: "engine off", down: "server unreachable",
     waiting: "waiting for the engine…", queued: "waiting in the queue ({n} before you)", loading: "loading the model…", generating: "generating…",
     first: "first token in {s} s", copy: "Copy", copied: "Copied", error: "Error: ", reasoning: "Reasoning", privacy: "Not encrypted (HTTP): use it only on a network you trust.",
-    tokens: "{n} tokens", stopped: "stopped",
+    tokens: "{n} tokens", ctx: "Context: {u} / {m} tokens", stopped: "stopped",
     sug1: "Explain what a database is in 3 sentences", sug2: "Write a short, polite email asking to move a meeting", sug3: "Give me 5 ideas for a school science project"
   },
   es: {
@@ -118,7 +119,7 @@ const TXT = {
     ready: "listo", working: "ocupado", off: "motor apagado", down: "servidor inaccesible",
     waiting: "esperando al motor…", queued: "en cola ({n} antes que tú)", loading: "cargando el modelo…", generating: "generando…",
     first: "primer token en {s} s", copy: "Copiar", copied: "Copiado", error: "Error: ", reasoning: "Razonamiento", privacy: "Sin cifrar (HTTP): úsalo solo en una red de confianza.",
-    tokens: "{n} tokens", stopped: "detenido",
+    tokens: "{n} tokens", ctx: "Contexto: {u} / {m} tokens", stopped: "detenido",
     sug1: "Explica qué es una base de datos en 3 frases", sug2: "Escribe un correo corto y amable para pedir mover una reunión", sug3: "Dame 5 ideas para un proyecto de ciencias del colegio"
   }
 };
@@ -129,6 +130,7 @@ const CLAVE = { get() { try { return localStorage.getItem("llm_clave") || ""; } 
 const cab = (extra = {}) => Object.assign({}, extra, CLAVE.get() ? { Authorization: "Bearer " + CLAVE.get() } : {});
 
 let historial = [];          // {role, content}
+let ctxUsado = 0, ctxMax = 0;      // tokens the conversation used in the last answer / context size of the selected model
 let control = null, ocupado = false, requiereClave = false, claveValida = true, sesion = 0;
 
 function textos() {
@@ -139,6 +141,10 @@ function textos() {
   if (!historial.length) vacio();
 }
 const LOGO = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' aria-hidden='true'><path d='M8 12h48'/><path d='M16 12v40M28 12v32M40 12v44M52 12v28'/><circle cx='16' cy='26' r='3.5' fill='currentColor'/><circle cx='16' cy='40' r='3.5' fill='currentColor'/><circle cx='28' cy='22' r='3.5' fill='currentColor'/><circle cx='40' cy='30' r='3.5' fill='currentColor'/><circle cx='40' cy='44' r='3.5' fill='currentColor'/><circle cx='52' cy='26' r='3.5' fill='currentColor'/></svg>";
+function ctxPintar() {
+  const e = $("ctxInfo");
+  e.textContent = ctxUsado > 0 && ctxMax > 0 ? t("ctx", { u: ctxUsado.toLocaleString(), m: ctxMax.toLocaleString() }) : "";
+}
 function vacio() {
   const d = $("mensajes"); d.textContent = "";
   const v = document.createElement("div"); v.className = "vacio";
@@ -214,6 +220,7 @@ async function estado() {
     else if (lista.length) sel.value = lista[0].id;
   }
   const act = lista.find((x) => x.id === $("modelo").value) || lista[0];
+  ctxMax = act && act.ctx ? act.ctx : 0; ctxPintar();
   $("avisosTxt").textContent = "";
   if (!lista.length) aviso(t("noModels"));
   else if (!conectado) aviso(t("engineOff"));
@@ -291,7 +298,7 @@ async function enviar() {
         if (delta.content) cont += delta.content;
         if (delta.content || delta.reasoning_content) { n++; if (!primer) { primer = performance.now(); if (!cont) a.cuerpo.textContent = ""; } }
         if (delta.content) pintar(a.cuerpo, cont);
-        if (j.usage) n = j.usage.completion_tokens;
+        if (j.usage) { n = j.usage.completion_tokens; ctxUsado = (j.usage.prompt_tokens || 0) + n; ctxPintar(); }
         const s = primer ? (performance.now() - primer) / 1000 : 0;
         meta.textContent = t("tokens", { n }) + " · " + t("first", { s: ((primer - t0) / 1000).toFixed(1) }) + (s > 0.5 ? " · " + (n / s).toFixed(1) + " tok/s" : "");
         bajar();
@@ -327,7 +334,7 @@ $("texto").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isCom
 $("enviar").onclick = enviar;
 $("modelo").onchange = () => estado();
 $("parar").onclick = () => control && control.abort();
-$("nuevo").onclick = () => { sesion++; if (control) control.abort(); historial = []; vacio(); $("texto").focus(); };
+$("nuevo").onclick = () => { sesion++; if (control) control.abort(); historial = []; ctxUsado = 0; ctxPintar(); vacio(); $("texto").focus(); };
 $("verSistema").onclick = (e) => { e.preventDefault(); $("sistema").hidden = !$("sistema").hidden; if (!$("sistema").hidden) $("sistema").focus(); };
 $("lang").onchange = () => { LANG = $("lang").value; try { localStorage.setItem("quipullm_lang", LANG); } catch {} textos(); estado(); };
 textos(); estado(); setInterval(() => { if (!ocupado) estado(); }, 5000); $("texto").focus();

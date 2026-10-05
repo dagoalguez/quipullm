@@ -198,7 +198,13 @@ class MotorFalso(threading.Thread):
             return
         self.post("/engine/api/event", {"tipo": "progreso", "id": jid, "fase": "cargando modelo 50%"})
         self.post("/engine/api/event", {"tipo": "inicio", "id": jid, "prompt_tokens": len(prompt)})
-        if "PENSAR" in prompt:
+        if "TOOLCALL" in prompt:      # a model that follows the tool format (the markers arrive split across tokens)
+            piezas = ["Voy a ", "consultar. [TOOL_RE", "QUEST]{\"name\": \"get_weather\", ", "\"arguments\": {\"city\": \"Lima\"}}", "[END_TOOL_", "REQUEST]"]
+        elif "TOOLLFM" in prompt:     # a model that uses its own native format (LFM2: python-like list)
+            piezas = ["<|tool_call_", "start|>[get_weather(", "city=\"Lima\")]<|tool_", "call_end|>"]
+        elif "TOOLBAD" in prompt:     # a model that breaks the format: the text must come back untouched
+            piezas = ["[TOOL_REQUEST]{esto no es json}", "[END_TOOL_REQUEST]"]
+        elif "PENSAR" in prompt:
             piezas = ["<th", "ink>", "Voy a ", "razonar", "</th", "ink>", "\n\n", "Respuesta ", "final."]
         elif "ECO" in prompt:
             piezas = [prompt[i:i + 7] for i in range(0, len(prompt), 7)]
@@ -234,7 +240,7 @@ def check(nombre, cond, detalle=""):
         print("  OK    " + nombre)
     else:
         FALLAS.append(nombre)
-        print("  FALLA " + nombre + ("  -> " + str(detalle)[:400] if detalle else ""))
+        print("  FALLA " + nombre + ("  -> " + str(detalle).replace("\n", " | ")[-400:] if detalle else ""))
 
 
 def puerto_libre():
@@ -311,8 +317,8 @@ def main():
         offsets[os.path.basename(rel)] = escribir_gguf(os.path.join(carpeta, *rel.split("/")), arch)
     puerto = puerto_libre()
     base = "http://127.0.0.1:%d" % puerto
-    # The server runs under a tiny wrapper that dumps every thread's stack after 20 s, so that a hang shows up in the failure log.
-    envoltorio = ("import faulthandler, runpy, sys; faulthandler.dump_traceback_later(20); "
+    # The server runs under a tiny wrapper that dumps every thread's stack after 120 s, so that a hang shows up in the failure log.
+    envoltorio = ("import faulthandler, runpy, sys; faulthandler.dump_traceback_later(120); "
                   "import os; sys.argv = sys.argv[1:]; sys.path.insert(0, os.path.dirname(os.path.abspath(sys.argv[0]))); "
                   "runpy.run_path(sys.argv[0], run_name='__main__')")
     # Output goes to a file, not a pipe: nobody reads a pipe while the tests run, and when it fills up (small on Windows) the server blocks on its own log.
@@ -481,6 +487,65 @@ def main():
         check("json_schema aceptado", cod == 200, r)
 
         print("\n== Streaming (SSE)")
+        # ---- tool calling (generic format)
+        herramientas = [{"type": "function", "function": {"name": "get_weather", "description": "Weather of a city",
+                                                           "parameters": {"type": "object", "properties": {"city": {"type": "string"}}}}}]
+        msg_tc = [{"role": "user", "content": "TOOLCALL clima en Lima"}]
+        cod, r, _ = c.pedir("/v1/chat/completions", {"model": "lfm2-1.2b-rag", "messages": msg_tc, "tools": herramientas})
+        ms = r["choices"][0]["message"] if cod == 200 else {}
+        llam = ms.get("tool_calls") or [{}]
+        check("tools: la llamada del modelo vuelve como tool_calls (sin stream)",
+              cod == 200 and r["choices"][0]["finish_reason"] == "tool_calls" and llam[0].get("type") == "function"
+              and llam[0].get("function", {}).get("name") == "get_weather" and llam[0].get("id", "").startswith("call_"), r)
+        check("tools: arguments es un string JSON con los argumentos", json.loads(llam[0].get("function", {}).get("arguments", "null")) == {"city": "Lima"}, llam)
+        check("tools: el texto previo a la llamada queda en content, sin marcas", ms.get("content") == "Voy a consultar. " and "TOOL_REQUEST" not in json.dumps(ms.get("content")), ms)
+        pr = motor.recibidos[-1]["prompt"]
+        check("tools: el prompt lleva la instrucción con las herramientas, en el mensaje de sistema",
+              "get_weather" in pr and "[TOOL_REQUEST]" in pr and pr.find("get_weather") < pr.find("TOOLCALL"), pr[:300])
+        _, lineas = c.stream("/v1/chat/completions", {"model": "lfm2-1.2b-rag", "stream": True, "messages": msg_tc, "tools": herramientas})
+        ch = chunks(lineas)
+        deltas = [x["choices"][0]["delta"] for x in ch]
+        tcs = [d_["tool_calls"][0] for d_ in deltas if d_.get("tool_calls")]
+        check("tools (stream): una llamada con index 0, nombre y arguments completos",
+              len(tcs) == 1 and tcs[0]["index"] == 0 and tcs[0]["function"]["name"] == "get_weather"
+              and json.loads(tcs[0]["function"]["arguments"]) == {"city": "Lima"}, tcs)
+        check("tools (stream): el texto sale por delta.content y no contiene marcas",
+              "".join(d_.get("content", "") for d_ in deltas) == "Voy a consultar. ", deltas)
+        check("tools (stream): finish_reason tool_calls y primer delta con role",
+              ch[-1]["choices"][0]["finish_reason"] == "tool_calls" and deltas[0].get("role") == "assistant", ch[-1])
+        cod, r, _ = c.pedir("/v1/chat/completions", {"model": "lfm2-1.2b-rag", "tools": herramientas,
+                                                     "messages": [{"role": "user", "content": "TOOLLFM clima en Lima"}]})
+        ms = r["choices"][0]["message"] if cod == 200 else {}
+        llam = ms.get("tool_calls") or [{}]
+        check("tools: una llamada en el formato nativo del modelo (LFM2) también vuelve como tool_calls",
+              cod == 200 and r["choices"][0]["finish_reason"] == "tool_calls" and llam[0].get("function", {}).get("name") == "get_weather"
+              and json.loads(llam[0]["function"]["arguments"]) == {"city": "Lima"} and not ms.get("content"), r)
+        cod, r, _ = c.pedir("/v1/chat/completions", {"model": "lfm2-1.2b-rag", "tools": herramientas, "tool_choice": "none",
+                                                     "messages": msg_tc})
+        check("tools: tool_choice none -> no se explica la herramienta ni se interpreta la salida",
+              cod == 200 and "get_weather" not in motor.recibidos[-1]["prompt"] and "tool_calls" not in r["choices"][0]["message"]
+              and "[TOOL_REQUEST]" in r["choices"][0]["message"]["content"], r)
+        cod, r, _ = c.pedir("/v1/chat/completions", {"model": "lfm2-1.2b-rag", "tools": herramientas,
+                                                     "messages": [{"role": "user", "content": "TOOLBAD"}]})
+        check("tools: si el modelo rompe el formato, el texto vuelve intacto como content (nada se pierde)",
+              cod == 200 and r["choices"][0]["message"]["content"] == "[TOOL_REQUEST]{esto no es json}[END_TOOL_REQUEST]"
+              and "tool_calls" not in r["choices"][0]["message"] and r["choices"][0]["finish_reason"] == "stop", r)
+        hist = [{"role": "user", "content": "clima en Lima"},
+                {"role": "assistant", "content": None, "tool_calls": [{"id": "call_1", "type": "function",
+                                                                      "function": {"name": "get_weather", "arguments": "{\"city\": \"Lima\"}"}}]},
+                {"role": "tool", "tool_call_id": "call_1", "content": "18 C nublado"},
+                {"role": "user", "content": "gracias, ECO"}]
+        cod, r, _ = c.pedir("/v1/chat/completions", {"model": "lfm2-1.2b-rag", "tools": herramientas, "messages": hist})
+        pr = motor.recibidos[-1]["prompt"]
+        check("tools: el historial con tool_calls y mensajes tool llega al modelo como texto (sin rol tool)",
+              cod == 200 and "[TOOL_RESULT]18 C nublado[END_TOOL_RESULT]" in pr and '"name": "get_weather"' in pr and "<|im_start|>tool" not in pr, pr[-400:])
+        for malo, etiqueta in (({"tools": "x"}, "tools no es lista"), ({"tools": [{"type": "function", "function": {}}]}, "función sin nombre"),
+                               ({"tools": herramientas, "tool_choice": "siempre"}, "tool_choice desconocido"),
+                               ({"tools": herramientas, "tool_choice": {"type": "function", "function": {"name": "otra"}}}, "tool_choice con función inexistente"),
+                               ({"tools": herramientas + herramientas}, "función repetida")):
+            cod, r, _ = c.pedir("/v1/chat/completions", dict({"model": "lfm2-1.2b-rag", "messages": msg_tc}, **malo))
+            check("tools: %s -> 400" % etiqueta, cod == 400, (cod, r))
+
         ctype, lineas = c.stream("/v1/chat/completions", {"model": "lfm2-1.2b-rag", "stream": True,
                                                           "messages": [{"role": "user", "content": "hola"}]})
         ch = chunks(lineas)
@@ -1033,7 +1098,7 @@ def main():
             srv2.communicate(timeout=5)
     except Exception:
         import traceback
-        check("uncaught exception in the suite", False, traceback.format_exc()[-1500:])
+        check("uncaught exception in the suite", False, traceback.format_exc()[-390:])
     finally:
         if motor:
             motor.activo = False
@@ -1139,6 +1204,53 @@ def resiliencia():
     check("--share: keeps the key from the environment", sv.preparar_compartir({"host": "127.0.0.1"}, ent3) is None and ent3["LLM_API_KEY"] == "del-entorno")
     check("--share: two runs create different keys", sv.preparar_compartir({}, {}) != sv.preparar_compartir({}, {}))
     check("max_tokens_efectivo: nothing asked, no default -> until the context is full", sv.max_tokens_efectivo(None) == -1)
+    # tool calling: the streaming filter must give the same result however the text is cut into tokens
+    texto_tc = 'Voy a mirar. [TOOL_REQUEST]{"name": "a", "arguments": {"x": 1}}[END_TOOL_REQUEST] y [TOOL_REQUEST]{"name":"b","arguments":"{\\"y\\": 2}"}[END_TOOL_REQUEST]fin'
+    def _filtrar(trozos, nombres=("a", "b")):
+        f = sv.FiltroHerramientas(nombres); salida = []
+        for tz in trozos:
+            salida += f.alimentar(tz)
+        salida += f.vaciar()
+        return "".join(x for t_, x in salida if t_ == "contenido"), [x["function"]["name"] + x["function"]["arguments"] for x in f.llamadas]
+    ref_tc = _filtrar([texto_tc])
+    check("tools: el filtro saca 2 llamadas y deja el texto sin marcas",
+          ref_tc == ("Voy a mirar.  y fin", ['a{"x": 1}', 'b{"y": 2}']), ref_tc)
+    check("tools: el resultado no depende de cómo se corte el texto (1, 2, 3, 7 caracteres)",
+          all(_filtrar([texto_tc[i:i + k] for i in range(0, len(texto_tc), k)]) == ref_tc for k in (1, 2, 3, 7)))
+    check("tools: una función que no está en tools no es una llamada (vuelve como texto)",
+          _filtrar(['[TOOL_REQUEST]{"name": "z", "arguments": {}}[END_TOOL_REQUEST]']) ==
+          ('[TOOL_REQUEST]{"name": "z", "arguments": {}}[END_TOOL_REQUEST]', []))
+    check("tools: sin marca de cierre (el modelo se detuvo) la llamada válida se acepta",
+          _filtrar(['[TOOL_REQUEST]{"name": "a", "arguments": {}}']) == ("", ["a{}"]))
+    # native formats written by some models on their own
+    lfm = 'Ok. <|tool_call_start|>[a(x=1, t="hola", ok=True, n=None), b(y=[1, 2])]<|tool_call_end|>fin'
+    ref_lfm = _filtrar([lfm])
+    check("tools: formato nativo LFM2 (lista estilo Python) -> 2 llamadas con sus tipos",
+          ref_lfm == ("Ok. fin", ['a{"x": 1, "t": "hola", "ok": true, "n": null}', 'b{"y": [1, 2]}']), ref_lfm)
+    check("tools: el formato nativo tampoco depende de cómo se corte el texto",
+          all(_filtrar([lfm[i:i + k] for i in range(0, len(lfm), k)]) == ref_lfm for k in (1, 2, 3, 5, 11)))
+    qw = 'Voy. <tool_call>\n{"name": "a", "arguments": {"x": 2}}\n</tool_call>'
+    ref_qw = _filtrar([qw])
+    check("tools: formato nativo Qwen/Hermes (<tool_call> con JSON)", ref_qw == ("Voy. ", ['a{"x": 2}']), ref_qw)
+    check("tools: Qwen cortado en trozos de 1 y 4 caracteres da lo mismo",
+          all(_filtrar([qw[i:i + k] for i in range(0, len(qw), k)]) == ref_qw for k in (1, 4)))
+    for malo, et in (('[a(1)]', "argumento posicional"), ('[z(x=1)]', "función que no existe"), ('[a(x=__import__("os"))]', "expresión no literal"),
+                     ('[a(**d)]', "**kwargs"), ('[a(x=1)', "sintaxis rota"), ('a(x=1).y', "no es una llamada"), ('[a(x=1), z()]', "una válida y una no (todo o nada)")):
+        txt = '<|tool_call_start|>' + malo + '<|tool_call_end|>'
+        check("tools: formato nativo inválido (%s) vuelve como texto" % et, _filtrar([txt]) == (txt, []), _filtrar([txt]))
+    check("tools: texto normal con '<' o '[' no se retiene ni se pierde",
+          _filtrar(["1 < 2 y [x] <b>hola</b> <tool", "s> fin"]) == ("1 < 2 y [x] <b>hola</b> <tools> fin", []))
+    check("tools: un '[' suelto al final no se pierde", _filtrar(["hola [TOOL"]) == ("hola [TOOL", []))
+    cs = [{"role": "assistant", "content": "ok", "tool_calls": [{"id": "1", "type": "function", "function": {"name": "a", "arguments": "{}"}}]},
+          {"role": "tool", "tool_call_id": "1", "content": "r1"}, {"role": "tool", "tool_call_id": "2", "content": "r2"}]
+    conv = sv.mensajes_con_herramientas(cs, [], "auto")
+    check("tools: dos mensajes tool seguidos se unen en un solo mensaje user; sin tools no se añade instrucción",
+          [m["role"] for m in conv] == ["assistant", "user"] and conv[1]["content"].count("[TOOL_RESULT]") == 2
+          and conv[0]["content"].startswith("ok[TOOL_REQUEST]") and "_resultado" not in conv[1], conv)
+    inst = sv.mensajes_con_herramientas([{"role": "system", "content": "Sé breve."}, {"role": "user", "content": "x"}],
+                                        [{"name": "a", "description": "", "parameters": {}}], {"name": "a"})
+    check("tools: la instrucción se añade al mensaje de sistema existente y con tool_choice fija la herramienta",
+          len(inst) == 2 and inst[0]["content"].startswith("Sé breve.") and 'MUST request a call to the tool "a"' in inst[0]["content"], inst)
     check("max_tokens_efectivo: default used when nothing is asked", sv.max_tokens_efectivo(None, 64) == 64)
     check("max_tokens_efectivo: asked value kept below the limit", sv.max_tokens_efectivo(80, 64, 100) == 80)
     check("max_tokens_efectivo: capped by the limit", sv.max_tokens_efectivo(500, 64, 100) == 100 and sv.max_tokens_efectivo(0, 0, 100) == 100 and sv.max_tokens_efectivo(-1, 0, 100) == 100)
@@ -1161,6 +1273,8 @@ def resiliencia():
     check("examples/agent-chat.html loads nothing from the internet", not re.findall(r'(?:src|href)\s*=\s*["\']https?://|url\(\s*["\']?https?://|@import', ej))
     check("examples/agent-chat.html inserts the model's text as text (no .innerHTML = )", ".innerHTML" not in ej)
     check("chat.html does not use innerHTML (model output is inserted as text)", "innerHTML" not in chat)
+    check("chat.html shows the context counter (usage.prompt_tokens + completion_tokens against the model's ctx)",
+          'id="ctxInfo"' in chat and "j.usage.prompt_tokens" in chat and "act.ctx" in chat and 'ctx: "Context:' in chat and 'ctx: "Contexto:' in chat)
     panel = open(os.path.join(AQUI, "web", "panel.html"), encoding="utf-8").read()
     claves = {}
     for lang in ("en", "es"):

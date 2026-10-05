@@ -13,7 +13,10 @@
 - No continuous batching, no prompt/KV cache reuse between requests (long multi-turn prompts are recomputed). In the `/chat` page this means each reply takes longer as the conversation grows; use *New chat* to start light.
 - The `/chat` page keeps the conversation only in the page (nothing is stored on the server), has no accounts, and renders only code blocks, `inline code` and bold; there is no full Markdown, file upload or image attachment in it yet (the API does support images for vision models).
 - KV cache is f32.
-- No tool/function calling and no grammar-constrained or JSON-schema-enforced output. `response_format: json_object` returns 400
+- Tool calling is **experimental** and generic (LM Studio "default mode" style): tools go into the system message and the model must write
+  `[TOOL_REQUEST]{...}[END_TOOL_REQUEST]`; the server parses it into `tool_calls`. It also accepts the native formats of LFM2 (`<|tool_call_start|>[f(a="x")]<|tool_call_end|>`) and Qwen/Hermes (`<tool_call>{...}</tool_call>`); other native formats are not recognised. There is no constrained decoding, so a model that ignores the format
+  simply answers in text. Only tested with the simulated engine; **not measured on real models.** Generation stops at `[TOOL_RESULT]`.
+- No grammar-constrained or JSON-schema-enforced output. `response_format: json_object` returns 400
   (as LM Studio did); `json_schema` is accepted but not enforced.
 - Not implemented: logprobs, `n > 1`, multiple models loaded at once.
 

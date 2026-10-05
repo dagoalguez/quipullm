@@ -19,6 +19,7 @@ Usage:  python server.py                 (opens the engine in Edge automatically
         python server.py --no-engine      (does not open Edge; useful for tests)
 """
 import argparse
+import ast
 import base64
 import json
 import logging
@@ -1017,6 +1018,232 @@ def plantilla_chat(arch, mensajes, plantilla=None):
 
 
 # =====================================================================
+#  Tool calling (generic format, like LM Studio's "default" tool use)
+# =====================================================================
+# The tools are described to the model in the system message and the model asks for a call with a fixed text format.
+# The server turns that text into OpenAI "tool_calls". Whether a model follows the format depends on the model: nothing
+# here forces it (no constrained decoding).
+MARCA_PEDIDO, MARCA_FIN_PEDIDO = "[TOOL_REQUEST]", "[END_TOOL_REQUEST]"
+MARCA_RESULTADO, MARCA_FIN_RESULTADO = "[TOOL_RESULT]", "[END_TOOL_RESULT]"
+MAX_HERRAMIENTAS = 64
+
+
+def validar_herramientas(d):
+    """Reads 'tools' and 'tool_choice' from the request body. Returns (tools, choice) where tools is a list of
+    {"name", "description", "parameters"} (empty = tool calling off) and choice is "auto", "none", "required" or
+    {"name": ...}. Raises ErrorAPI(400) if the request is malformed."""
+    crudas = d.get("tools")
+    if crudas is None:
+        return [], "auto"
+    if not isinstance(crudas, list) or len(crudas) > MAX_HERRAMIENTAS:
+        raise ErrorAPI(400, "'tools' must be a list of at most %d functions" % MAX_HERRAMIENTAS)
+    tools, nombres = [], set()
+    for t in crudas:
+        f = t.get("function") if isinstance(t, dict) and t.get("type", "function") == "function" else None
+        if not isinstance(f, dict) or not isinstance(f.get("name"), str) or not f["name"].strip():
+            raise ErrorAPI(400, "each item of 'tools' must be {\"type\": \"function\", \"function\": {\"name\": ...}}")
+        if f["name"] in nombres:
+            raise ErrorAPI(400, "'tools' has the function '%s' twice" % f["name"])
+        params = f.get("parameters")
+        if params is not None and not isinstance(params, dict):
+            raise ErrorAPI(400, "'parameters' of '%s' must be a JSON schema object" % f["name"])
+        nombres.add(f["name"])
+        tools.append({"name": f["name"], "description": str(f.get("description") or ""), "parameters": params or {}})
+    ch = d.get("tool_choice", "auto")
+    if ch is None:
+        ch = "auto"
+    if isinstance(ch, dict):
+        n = (ch.get("function") or {}).get("name") if ch.get("type", "function") == "function" else None
+        if n not in nombres:
+            raise ErrorAPI(400, "'tool_choice' names a function that is not in 'tools'")
+        ch = {"name": n}
+    elif ch not in ("auto", "none", "required"):
+        raise ErrorAPI(400, "'tool_choice' must be 'auto', 'none', 'required' or {\"type\": \"function\", \"function\": {\"name\": ...}}")
+    return tools, ch
+
+
+def instruccion_herramientas(tools, choice):
+    lista = json.dumps([{"name": t["name"], "description": t["description"], "parameters": t["parameters"]} for t in tools],
+                       ensure_ascii=False)
+    txt = ("You can use these tools:\n%s\n\nTo use a tool, write exactly this and nothing else after it:\n"
+           "%s{\"name\": \"tool_name\", \"arguments\": {\"argument\": \"value\"}}%s\n"
+           "The result will arrive in the next message between %s and %s. "
+           "Use a tool only when you need it; otherwise answer normally." % (lista, MARCA_PEDIDO, MARCA_FIN_PEDIDO,
+                                                                                MARCA_RESULTADO, MARCA_FIN_RESULTADO))
+    if choice == "required":
+        txt += "\nYou MUST request a tool call in your next answer."
+    elif isinstance(choice, dict):
+        txt += "\nYou MUST request a call to the tool \"%s\" in your next answer." % choice["name"]
+    return txt
+
+
+def _texto_plano(c):
+    return c if isinstance(c, str) else texto_de_contenido(c)[0]
+
+
+def mensajes_con_herramientas(mensajes, tools, choice):
+    """Rewrites the conversation so any chat template can take it: assistant 'tool_calls' become the request text, 'tool'
+    messages become user messages with the result, and (if tools are active) the instruction goes into the system message."""
+    out = []
+    for m in mensajes:
+        if not isinstance(m, dict):
+            out.append(m)
+            continue
+        rol = m.get("role")
+        if rol == "assistant" and isinstance(m.get("tool_calls"), list) and m["tool_calls"]:
+            texto = _texto_plano(m.get("content"))
+            for c in m["tool_calls"]:
+                f = (c or {}).get("function") or {}
+                args = f.get("arguments")
+                if isinstance(args, str):
+                    try:
+                        args = json.loads(args)
+                    except ValueError:
+                        pass
+                texto += MARCA_PEDIDO + json.dumps({"name": f.get("name"), "arguments": args if args is not None else {}},
+                                                    ensure_ascii=False) + MARCA_FIN_PEDIDO
+            out.append({"role": "assistant", "content": texto})
+        elif rol == "tool":
+            bloque = MARCA_RESULTADO + _texto_plano(m.get("content")) + MARCA_FIN_RESULTADO
+            if out and isinstance(out[-1], dict) and out[-1].get("_resultado"):
+                out[-1]["content"] += "\n" + bloque
+            else:
+                out.append({"role": "user", "content": bloque, "_resultado": True})
+        else:
+            out.append(m)
+    out = [{k: v for k, v in m.items() if k != "_resultado"} if isinstance(m, dict) else m for m in out]
+    if tools and choice != "none":
+        instr = instruccion_herramientas(tools, choice)
+        for i, m in enumerate(out):
+            if isinstance(m, dict) and m.get("role") == "system":
+                out[i] = dict(m, content=_texto_plano(m.get("content")) + "\n\n" + instr)
+                break
+        else:
+            out.insert(0, {"role": "system", "content": instr})
+    return out
+
+
+# Call formats the filter recognises: (start marker, end marker, how the text between them is written).
+# The first one is the format the server asks for; the others are what some models write on their own
+# (LFM2: python-like list; Qwen/Hermes: <tool_call> JSON), so a call is not lost just for using the model's native way.
+FORMATOS_LLAMADA = (
+    (MARCA_PEDIDO, MARCA_FIN_PEDIDO, "json"),
+    ("<tool_call>", "</tool_call>", "json"),
+    ("<|tool_call_start|>", "<|tool_call_end|>", "python"),
+)
+MAX_BLOQUE_LLAMADA = 20000
+
+
+def _llamada_openai(nombre, args):
+    return {"id": "call_" + secrets.token_hex(8), "type": "function",
+            "function": {"name": nombre, "arguments": json.dumps(args, ensure_ascii=False)}}
+
+
+def leer_llamadas(bloque, nombres, tipo="json"):
+    """Parses the text between the markers. Returns a list of OpenAI tool_call dicts, or [] if it is not valid
+    (all or nothing: a half-valid block is given back as text)."""
+    if len(bloque) > MAX_BLOQUE_LLAMADA:
+        return []
+    if tipo == "python":        # [get_weather(city="Lima"), other(x=1)]  - literals only, nothing is ever executed
+        try:
+            t = ast.parse(bloque.strip(), mode="eval").body
+        except (SyntaxError, ValueError, RecursionError, MemoryError):
+            return []
+        salida = []
+        for e in (t.elts if isinstance(t, ast.List) else [t]):
+            if not (isinstance(e, ast.Call) and isinstance(e.func, ast.Name) and e.func.id in nombres and not e.args):
+                return []
+            args = {}
+            for k in e.keywords:
+                try:
+                    if k.arg is None:
+                        return []
+                    args[k.arg] = ast.literal_eval(k.value)
+                except (ValueError, TypeError, SyntaxError, RecursionError, MemoryError):
+                    return []
+            salida.append(_llamada_openai(e.func.id, args))
+        return salida
+    try:
+        j = json.loads(bloque.strip())
+    except ValueError:
+        return []
+    if not isinstance(j, dict) or j.get("name") not in nombres:
+        return []
+    args = j.get("arguments", j.get("parameters", {}))
+    if isinstance(args, str):
+        try:
+            args = json.loads(args)
+        except ValueError:
+            return []
+    if args is None:
+        args = {}
+    if not isinstance(args, dict):
+        return []
+    return [_llamada_openai(j["name"], args)]
+
+
+class FiltroHerramientas:
+    """Streaming filter: lets the normal text pass, holds back what is between a start and an end marker of a known
+    format and turns it into tool calls. What is not a valid call is given back as text, so nothing is lost."""
+
+    def __init__(self, nombres):
+        self.nombres = set(nombres)
+        self.buf = ""
+        self.formato = None          # the format we are inside of, or None
+        self.llamadas = []
+
+    def alimentar(self, texto):
+        """Returns a list of ("contenido", text) and ("llamada", tool_call) pieces."""
+        self.buf += texto
+        out = []
+        while True:
+            if self.formato is None:
+                mejor = None
+                for f in FORMATOS_LLAMADA:
+                    i = self.buf.find(f[0])
+                    if i >= 0 and (mejor is None or i < mejor[0]):
+                        mejor = (i, f)
+                if mejor:
+                    i, f = mejor
+                    if i:
+                        out.append(("contenido", self.buf[:i]))
+                    self.buf = self.buf[i + len(f[0]):]
+                    self.formato = f
+                    continue
+                retener = 0           # the end of the text could be the start of a marker: wait for the next piece
+                for k in range(min(max(len(f[0]) for f in FORMATOS_LLAMADA) - 1, len(self.buf)), 0, -1):
+                    if any(f[0].startswith(self.buf[-k:]) for f in FORMATOS_LLAMADA):
+                        retener = k
+                        break
+                if len(self.buf) > retener:
+                    out.append(("contenido", self.buf[:len(self.buf) - retener]))
+                    self.buf = self.buf[len(self.buf) - retener:]
+                return out
+            i = self.buf.find(self.formato[1])
+            if i < 0:
+                return out
+            f = self.formato
+            out.extend(self._cerrar(self.buf[:i], f, True))
+            self.buf = self.buf[i + len(f[1]):]
+            self.formato = None
+
+    def _cerrar(self, bloque, f, con_fin):
+        cs = leer_llamadas(bloque, self.nombres, f[2])
+        if not cs:
+            return [("contenido", f[0] + bloque + (f[1] if con_fin else ""))]
+        self.llamadas.extend(cs)
+        return [("llamada", c) for c in cs]
+
+    def vaciar(self):
+        b, self.buf = self.buf, ""
+        f, self.formato = self.formato, None
+        if f:
+            return self._cerrar(b, f, False) if b.strip() else [("contenido", f[0])]
+        return [("contenido", b)] if b else []
+
+
+
+# =====================================================================
 #  Text post-processing: stop strings and reasoning separation
 # =====================================================================
 class FiltroStop:
@@ -1854,6 +2081,7 @@ class Manejador(BaseHTTPRequestHandler):
         if isinstance(rf, dict) and rf.get("type") not in (None, "text", "json_schema"):
             # Same as LM Studio: this way client code uses its known fallback.
             raise ErrorAPI(400, "'response_format.type' must be 'json_schema' or 'text'")
+        herramientas, eleccion = validar_herramientas(d) if es_chat else ([], "auto")
         if es_chat:
             mensajes = d.get("messages")
             if not isinstance(mensajes, list) or not mensajes:
@@ -1867,6 +2095,7 @@ class Manejador(BaseHTTPRequestHandler):
                         "vision_not_supported")
                 mensajes = [dict(x, content=contenido_con_imagenes(x.get("content"), imagenes)) if isinstance(x, dict) else x
                             for x in mensajes]
+            mensajes = mensajes_con_herramientas(mensajes, herramientas, eleccion)
             try:
                 prompt, incluye_bos = plantilla_chat(m["arch"], mensajes, reg.plantilla(m))
             except Exception as e:
@@ -1887,6 +2116,9 @@ class Manejador(BaseHTTPRequestHandler):
         stops = d.get("stop") or []
         if isinstance(stops, str):
             stops = [stops]
+        con_herramientas = bool(herramientas) and eleccion != "none"
+        if con_herramientas:
+            stops = list(stops) + [MARCA_RESULTADO]      # the model must not invent the result of its own call
         defecto = cfg["default_sampling"]
         params = {}
         gen = ajustes_generacion(cfg, m)
@@ -1917,6 +2149,7 @@ class Manejador(BaseHTTPRequestHandler):
         modelo_resp = pedido or m["id"]
         razon = SeparadorRazonamiento(activo=es_chat)
         filtro = FiltroStop(stops)
+        filtro.herramientas = FiltroHerramientas([x["name"] for x in herramientas]) if con_herramientas else None
         try:
             if stream:
                 self._responder_stream(t, es_chat, modelo_resp, razon, filtro)
@@ -2027,11 +2260,17 @@ class Manejador(BaseHTTPRequestHandler):
                                "engine_error")
         self._acumular(None, es_chat, razon, filtro, contenido, razonamiento, t)
         motivo = "stop" if filtro.detenido else fin.get("razon", "stop")
+        herr = getattr(filtro, "herramientas", None)
+        llamadas = herr.llamadas if herr else []
+        if llamadas:
+            motivo = "tool_calls"
         uso = self._uso(fin, prompt_tokens)
         self._registrar(t, uso, fin)
         texto = "".join(contenido)
         if es_chat:
-            msg = {"role": "assistant", "content": texto}
+            msg = {"role": "assistant", "content": (texto if texto.strip() or not llamadas else None)}
+            if llamadas:
+                msg["tool_calls"] = llamadas
             if razonamiento:
                 msg["reasoning_content"] = "".join(razonamiento)
             elec = {"index": 0, "message": msg, "logprobs": None, "finish_reason": motivo}
@@ -2053,6 +2292,14 @@ class Manejador(BaseHTTPRequestHandler):
             partes = razon.alimentar(texto) if texto is not None else razon.vaciar()
         else:
             partes = [("contenido", texto)] if texto is not None else []
+        herr = getattr(filtro, "herramientas", None)
+
+        def volcar(ok):
+            for tp, x in (herr.alimentar(ok) if herr else [("contenido", ok)]):
+                if tp == "contenido":
+                    contenido.append(x)
+                piezas.append((tp, x))
+
         for tipo, s in partes:
             if tipo == "razon":
                 razonamiento.append(s)
@@ -2060,13 +2307,16 @@ class Manejador(BaseHTTPRequestHandler):
             else:
                 ok = filtro.alimentar(s)
                 if ok:
-                    contenido.append(ok)
-                    piezas.append(("contenido", ok))
+                    volcar(ok)
         if texto is None:
             resto = filtro.vaciar()
             if resto:
-                contenido.append(resto)
-                piezas.append(("contenido", resto))
+                volcar(resto)
+            if herr:
+                for tp, x in herr.vaciar():
+                    if tp == "contenido":
+                        contenido.append(x)
+                    piezas.append((tp, x))
         if filtro.detenido and not t.terminado:
             ESTADO["puente"].cancelar(t)
         return piezas
@@ -2102,12 +2352,18 @@ class Manejador(BaseHTTPRequestHandler):
             self.wfile.write(b"%x\r\n%s\r\n" % (len(b), b))
             self.wfile.flush()
 
+        nllamadas = [0]
+
         def emitir(piezas):
             for tipo, s in piezas:
                 if not s:
                     continue
                 if es_chat:
-                    delta = {"reasoning_content": s} if tipo == "razon" else {"content": s}
+                    if tipo == "llamada":
+                        delta = {"tool_calls": [dict(s, index=nllamadas[0])]}
+                        nllamadas[0] += 1
+                    else:
+                        delta = {"reasoning_content": s} if tipo == "razon" else {"content": s}
                     if primero[0]:
                         delta = dict(role="assistant", **delta)
                         primero[0] = False
@@ -2145,6 +2401,8 @@ class Manejador(BaseHTTPRequestHandler):
             emitir(self._acumular(None, es_chat, razon, filtro, [], [], t))
             uso = self._uso(fin, prompt_tokens)
             motivo = "stop" if filtro.detenido else fin.get("razon", "stop")
+            if nllamadas[0]:
+                motivo = "tool_calls"
             chunk(delta={}, texto="", fin=motivo, uso=uso)
             enviar("data: [DONE]\n\n")
             self.wfile.write(b"0\r\n\r\n")

@@ -43,7 +43,7 @@ WebGPU; the machine we measured against LM Studio is exactly that case. A dedica
 
 - **Fast answers from 7–8B models on an integrated GPU:** about 2–3 tokens/s on the one we measured.
 - **Many simultaneous users:** it serves one request at a time; the rest wait.
-- **Agents or structured output:** no tool calling and no enforced JSON schema yet.
+- **Agents or structured output:** experimental tool calling only (generic text format, not measured on real models yet) and no enforced JSON schema.
 - **A server with no screen:** the engine needs a browser window open on the server PC.
 - **Anything that needs a certification, an external security audit or encrypted traffic:** it has none of them (no TLS).
   Prompts stay on your machine and we found no outgoing connections, but that is a check, not an audit; review it yourself.
@@ -224,7 +224,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and the [ROADMAP](ROADMAP.md). Where help
 1. **Benchmarks on other hardware** (AMD, Apple, recent NVIDIA and Linux GPUs, LM Studio comparisons) with `tools/bench.py`: we measured three machines, two of them with only two runs per model and no LM Studio.
 2. **Testing the engine launch on Linux (recent GPUs) and macOS** (Linux was tried once, on a 2012 Intel GPU, with special Chrome flags; macOS is untested).
 3. **New model architectures** (a JSON manifest plus a test-generator variant; see [docs/ARCH_GUIDE.md](docs/ARCH_GUIDE.md)).
-4. **Roadmap features:** tool calling, enforced JSON schema, prompt caching, a windowless mode.
+4. **Roadmap features:** measuring tool calling on real models, enforced JSON schema, prompt caching, a windowless mode.
 5. **Bug reports** with the engine log, security review, translations and identifier renames.
 
 The interface, messages, configuration keys and HTTP API are in English; comments and docstrings are English, but many internal identifiers

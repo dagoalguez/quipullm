@@ -43,7 +43,7 @@ por hardware; la máquina con la que comparamos contra LM Studio es justo ese ca
 
 - **Respuestas rápidas con modelos de 7–8B en una GPU integrada:** unos 2–3 tokens/s en la que medimos.
 - **Muchos usuarios a la vez:** atiende una petición a la vez; las demás esperan.
-- **Agentes o salida estructurada:** todavía sin tool calling ni JSON schema forzado.
+- **Agentes o salida estructurada:** tool calling solo experimental (formato de texto genérico, aún sin medir en modelos reales) y sin JSON schema forzado.
 - **Un servidor sin pantalla:** el motor necesita una ventana del navegador abierta en la PC servidora.
 - **Lo que exija certificación, auditoría de seguridad externa o tráfico cifrado:** no tiene nada de eso (sin TLS).
   Los prompts se quedan en tu máquina y no encontramos conexiones salientes, pero eso es una comprobación, no una auditoría; revísalo tú.
@@ -222,7 +222,7 @@ Ver [CONTRIBUTING.md](CONTRIBUTING.md) y el [ROADMAP](ROADMAP.es.md). Donde más
 1. **Benchmarks en otro hardware** (AMD, Apple, NVIDIA recientes y Linux, comparaciones con LM Studio) con `tools/bench.py`: medimos tres máquinas, dos de ellas con solo dos corridas por modelo y sin LM Studio.
 2. **Probar el arranque del motor en Linux (GPUs recientes) y macOS** (Linux se probó una vez, en una GPU Intel de 2012 con flags especiales de Chrome; macOS sin probar).
 3. **Nuevas arquitecturas de modelo** (un manifiesto JSON más una variante del generador de pruebas; ver [docs/ARCH_GUIDE.md](docs/ARCH_GUIDE.md)).
-4. **Funciones del roadmap:** tool calling, JSON schema forzado, caché de prompts, modo sin ventana.
+4. **Funciones del roadmap:** medir el tool calling en modelos reales, JSON schema forzado, caché de prompts, modo sin ventana.
 5. **Reportes de errores** con el registro del motor, revisión de seguridad, traducciones y renombrado de identificadores.
 
 La interfaz, los mensajes, las claves de configuración y la API HTTP están en inglés; los comentarios y docstrings están en inglés, pero muchos identificadores internos

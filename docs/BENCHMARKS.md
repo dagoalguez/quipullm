@@ -81,6 +81,21 @@ Notes:
 
 Before tiled prefill (v2.1.1) a 43-token prompt on qwen 7B took about 10 s for the first token; after it, 1.9 s.
 
+## Tool calling (experimental)
+
+Measured on 2026-10-04 with a development version after 4.1.0 (not yet released), on the **Windows PC** of the table above: Intel Core i5-8400, NVIDIA GeForce GTX 1050 Ti 4 GB (driver 32.0.15.6094),
+15.9 GiB RAM, Windows 11 Pro 25H2 (build 26200.6584), Microsoft Edge 154.0.4258.53. Script: `tools/probar_tools.py`, temperature 0, **5 runs**.
+
+Each run asks a weather question with one tool (`get_weather(city)`), checks for a valid tool call, sends a fake tool result and checks that the model answers in text.
+
+| Model | Valid tool call | Text answer after the result | Time per run (2 requests) |
+|---|---|---|---|
+| lfm2.5-1.2b-instruct (Q8_0) | 5/5 | 5/5 | 22–24 s |
+
+What this does **not** tell: whether the model picks the right tool among several, whether it avoids calling a tool when none is needed, harder arguments, streaming with real models, or any other model.
+The model wrote its calls in its own native format (`<|tool_call_start|>[get_weather(city="Lima")]<|tool_call_end|>`), which the server understands.
+A 7B Qwen2.5-Coder model was refused on this PC by the memory check (about 5.0 GB needed against 3.9 GB estimated), so no 7B result exists.
+
 ## Vision
 
 | Test | Result |
@@ -97,6 +112,7 @@ nomic-embed-text-v1.5: vector norm 1, similarities as expected, 0.05 s per short
 
 - Any AMD GPU (discrete or integrated), any Apple or macOS machine, any Linux machine with a recent GPU.
 - LM Studio on the two machines in "Other machines"; Gemma 3 4B and the 7–8 B models on the Linux laptop; more than two runs per model on those machines.
+- Tool calling with any model other than lfm2.5-1.2b-instruct, with more than one tool, or on a prompt that needs no tool.
 - More than one simultaneous user (requests queue; one engine).
 - DeepSeek-Coder-V2-Lite generation speed beyond the 36 s total above.
 - Memory autoadjust thresholds on other hardware.

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+- **Experimental tool calling** (`tools` / `tool_choice` / `tool` messages / `tool_calls`), LM Studio "default mode" style: the tools are described in the
+  system message, the model writes `[TOOL_REQUEST]{...}[END_TOOL_REQUEST]`, the server turns it into OpenAI `tool_calls` (`finish_reason: "tool_calls"`, also when streaming)
+  and tool results come back as `[TOOL_RESULT]` text. Calls written in the model's own native format are also understood:
+  LFM2 (`<|tool_call_start|>[f(a="x")]<|tool_call_end|>`, literals only, nothing is executed) and Qwen/Hermes (`<tool_call>{json}</tool_call>`). No constrained decoding: whether a model follows the format depends on the model and has **not been measured** on real models yet.
+
 ## 4.1.0
 - New **chat page** at `/chat` (plain text like the rest): streaming conversation with in-page history, stop button, system instruction, reasoning shown apart,
   code blocks and copy button, queue/loading status, English/Spanish, light/dark. Messages are not stored on the server.
@@ -14,6 +20,7 @@
   The chat page's Copy button got the same fix.
 - The panel shows one address to give your team (the IP address when there is one).
 - Chat: each code block has its own Copy button.
+- Chat: a context counter under the message box ("Context: 150 / 8,192 tokens"): tokens used by the conversation in the last answer against the model's context size.
 - Chat: the message box no longer shows scroll arrows while its text is short.
 - The chat page no longer shows response-length or temperature boxes: both are set only by the owner (panel, global or per model).
 - Response length: new "Default response length" and "Response length limit" settings (general and per model), and a per-model temperature (panel Models card).
