@@ -51,7 +51,7 @@ The test suite already runs the real engine in headless Chromium with SwiftShade
 
 ## 4. Tool / function calling
 
-**Today:** not supported.
+**Today:** experimental, in the unreleased development version. A generic mode like LM Studio's "default mode": the tools are described in the system message, the model writes `[TOOL_REQUEST]{...}[END_TOOL_REQUEST]` (or its own native format: LFM2 and Qwen/Hermes are understood) and the server returns OpenAI `tool_calls`, also when streaming. Measured with one model on one PC (lfm2.5-1.2b-instruct, 3 runs per kind): it chose the right tool between two 6 of 6 times, but refused 1 of 3 ordinary questions once tools were offered ([BENCHMARKS.md](docs/BENCHMARKS.md)). Not done: rendering the tools with each model's own chat template, other model families, larger models, enforced JSON arguments.
 
 **What we would do:** accept `tools` and `tool_choice`; render them into the model's chat template (the template interpreter in `templates.py` already supports `tojson` and `namespace`, which tool templates use); parse the model's tool-call output into the OpenAI `tool_calls` format, including streaming. The output format differs between model families, so it would start with one or two families and grow.
 

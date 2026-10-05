@@ -51,7 +51,7 @@ La suite de pruebas ya corre el motor real en Chromium sin ventana con SwiftShad
 
 ## 4. Tool calling / llamada a funciones
 
-**Hoy:** no soportado.
+**Hoy:** experimental, en la versión de desarrollo aún sin publicar. Un modo genérico como el «modo por defecto» de LM Studio: las herramientas se describen en el mensaje de sistema, el modelo escribe `[TOOL_REQUEST]{...}[END_TOOL_REQUEST]` (o su formato nativo: se entienden LFM2 y Qwen/Hermes) y el servidor devuelve `tool_calls` de OpenAI, también con streaming. Medido con un modelo en un PC (lfm2.5-1.2b-instruct, 3 corridas por tipo): eligió la herramienta correcta entre dos 6 de 6 veces, pero rechazó 1 de 3 preguntas normales cuando había herramientas ([BENCHMARKS.md](docs/BENCHMARKS.md)). Sin hacer: mostrar las herramientas con la plantilla de chat propia de cada modelo, otras familias, modelos mayores, argumentos JSON forzados.
 
 **Qué haríamos:** aceptar `tools` y `tool_choice`; volcarlos en la plantilla de chat del modelo (el intérprete de plantillas de `templates.py` ya soporta `tojson` y `namespace`, que usan las plantillas con herramientas); interpretar la salida del modelo en el formato `tool_calls` de OpenAI, incluido el streaming. El formato de salida varía entre familias de modelos, así que empezaría con una o dos familias y crecería.
 
