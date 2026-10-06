@@ -1289,6 +1289,10 @@ def resiliencia():
           'className = "regen"' in chat and "function regenerar" in chat and 'id="abajo"' in chat and "pegado" in chat)
     check("chat.html shows the context counter (usage.prompt_tokens + completion_tokens against the model's ctx)",
           'id="ctxInfo"' in chat and "j.usage.prompt_tokens" in chat and "act.ctx" in chat and 'ctx: "Context:' in chat and 'ctx: "Contexto:' in chat)
+    check("chat.html saves chats only in the browser (IndexedDB), validates imports, has retention and a cap, and sends nothing extra to the server",
+          'indexedDB.open("quipullm_chats"' in chat and "function limpiar" in chat and "MAX_CHATS" in chat and "async function podar" in chat and '"/v1/chat/completions"' in chat and "/api/chats" not in chat)
+    check("chat, panel and engine pages carry the quipullm icon inline (no extra request, nothing from the internet)",
+          all('rel="icon"' in open(os.path.join(AQUI, "web", f), encoding="utf-8").read() for f in ("chat.html", "panel.html", "engine.html")))
     panel = open(os.path.join(AQUI, "web", "panel.html"), encoding="utf-8").read()
     claves = {}
     for lang in ("en", "es"):

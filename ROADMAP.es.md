@@ -71,7 +71,7 @@ La suite de pruebas ya corre el motor real en Chromium sin ventana con SwiftShad
 
 `logprobs` y `n > 1` no están implementados. Como los logits ya están disponibles en JavaScript para el muestreo, `logprobs` debería ser barato; `n > 1` necesita generación repetida en una petición. Se verifica con pruebas de API.
 
-La página `/chat` es pequeña a propósito. Candidatos, todos de bajo riesgo: listas y tablas en el renderizador de Markdown, adjuntar una imagen para modelos de visión, exportar una conversación y (tras el punto 3) conversaciones largas más rápidas. Se verificarían en un navegador real contra un motor simulado.
+La página `/chat` es pequeña a propósito. Candidatos, todos de bajo riesgo: adjuntar una imagen para modelos de visión y (tras el punto 3) conversaciones largas más rápidas. Hecho en la versión sin publicar: Markdown (listas, tablas, títulos) y chats guardados en el navegador con exportar/importar. No hecho: historial en el servidor por usuario (requiere cuentas separadas, que la clave compartida no ofrece). Se verificarían en un navegador real contra un motor simulado.
 
 ## 7. Benchmarks en otro hardware
 

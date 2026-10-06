@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%231f2a37'/%3E%3Cg%20fill='none'%20stroke='%23bcd9f7'%20stroke-width='3.5'%20stroke-linecap='round'%3E%3Cpath%20d='M10%2014h44'/%3E%3Cpath%20d='M18%2014v36M29%2014v30M40%2014v38M50%2014v24'/%3E%3C/g%3E%3Cg%20fill='%235aa7f0'%3E%3Ccircle%20cx='18'%20cy='27'%20r='4'/%3E%3Ccircle%20cx='18'%20cy='39'%20r='4'/%3E%3Ccircle%20cx='29'%20cy='23'%20r='4'/%3E%3Ccircle%20cx='40'%20cy='31'%20r='4'/%3E%3Ccircle%20cx='40'%20cy='43'%20r='4'/%3E%3Ccircle%20cx='50'%20cy='27'%20r='4'/%3E%3C/g%3E%3C/svg%3E">
 <title>quipullm chat</title>
 <style>
   :root { color-scheme: light dark; --fondo:#f6f7f9; --panel:#ffffff; --linea:#e1e5ea; --texto:#1c2128; --tenue:#6b7280; --acento:#0f5ea8; --acento2:#0c4d8a; --sobreacento:#fff; --codigo:#f0f2f5; --mal:#cf222e; --sombra:0 2px 14px rgba(16,24,40,.08); --cab:#1f2a37; }
@@ -29,6 +30,28 @@
   .aviso { background:#fff4c2; border:1px solid #e6c34a; color:#5b4300; border-radius:10px; padding:9px 14px; margin:12px auto 0; max-width:820px; font-size:14px; }
   .aviso input { font-family:inherit; font-size:14px; padding:5px 9px; border:1px solid #c9ced6; border-radius:8px; margin:0 6px; }
   .aviso button { font-family:inherit; font-size:13px; border:1px solid #b9962b; background:#fff; color:#3b2c00; border-radius:8px; padding:5px 11px; cursor:pointer; }
+  .area { flex:1; display:flex; min-height:0; position:relative; }
+  .col { flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; }
+  .lateral { width:272px; flex:none; display:flex; flex-direction:column; background:var(--panel); border-right:1px solid var(--linea); min-height:0; }
+  .lateral[hidden] { display:none; }
+  .lat-cab { padding:10px; }
+  .lat-cab button, .lat-pie button { width:100%; font-family:inherit; font-size:13px; padding:7px 10px; border-radius:10px; border:1px solid var(--linea); background:transparent; color:var(--texto); cursor:pointer; }
+  .lat-cab button:hover, .lat-pie button:hover { border-color:var(--acento); }
+  #lista { flex:1; overflow-y:auto; padding:2px 8px 8px; }
+  .item { display:flex; align-items:center; gap:2px; border-radius:10px; padding:1px 3px; }
+  .item:hover, .item.activo { background:var(--codigo); }
+  .item .tit { flex:1; min-width:0; text-align:left; background:none; border:0; color:var(--texto); font:inherit; font-size:14px; padding:7px 6px; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .item .ic { opacity:0; font-family:inherit; font-size:13px; line-height:1; width:26px; height:26px; padding:0; border:0; border-radius:7px; background:transparent; color:var(--tenue); cursor:pointer; }
+  .item:hover .ic, .item.activo .ic, .item:focus-within .ic { opacity:1; }
+  .item .ic:hover { background:var(--linea); color:var(--texto); }
+  @media (hover:none) { .item .ic { opacity:1; } }
+  .sinchats { color:var(--tenue); font-size:13px; padding:8px 10px; }
+  .lat-pie { border-top:1px solid var(--linea); padding:10px; display:flex; flex-direction:column; gap:7px; font-size:12px; color:var(--tenue); }
+  .lat-pie .fila2 { display:flex; gap:6px; } .lat-pie .fila2 button { flex:1; }
+  .lat-pie select { max-width:none; width:100%; }
+  .lat-pie button.peligro:hover { border-color:var(--mal); color:var(--mal); }
+  #lat { padding:5px 10px; font-size:16px; line-height:1; }
+  @media (max-width:760px) { .lateral { position:absolute; z-index:6; top:0; bottom:0; left:0; box-shadow:var(--sombra); } }
   main { flex:1; overflow-y:auto; padding:20px 16px 36px; }
   #mensajes { max-width:820px; margin:0 auto; display:flex; flex-direction:column; gap:18px; }
   .vacio { text-align:center; margin-top:8vh; }
@@ -84,6 +107,7 @@
 </head>
 <body>
 <header>
+  <button id="lat" type="button" class="btn-cab" aria-label="Chats">&#9776;</button>
   <span class="marca"><svg width="22" height="22" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M8 12h48"/><path d="M16 12v40M28 12v32M40 12v44M52 12v28"/><circle cx="16" cy="26" r="3.5" fill="currentColor"/><circle cx="16" cy="40" r="3.5" fill="currentColor"/><circle cx="28" cy="22" r="3.5" fill="currentColor"/><circle cx="40" cy="30" r="3.5" fill="currentColor"/><circle cx="40" cy="44" r="3.5" fill="currentColor"/><circle cx="52" cy="26" r="3.5" fill="currentColor"/></svg>quipullm</span>
   <select id="modelo" aria-label="Model"></select>
   <span id="estado" class="insignia"></span>
@@ -92,6 +116,19 @@
   <a href="/" id="aPanel"></a>
   <select id="lang" aria-label="Language"><option value="en">English</option><option value="es">Español</option></select>
 </header>
+<div class="area">
+<aside id="lateral" class="lateral" hidden>
+  <div class="lat-cab"><button id="latNuevo" type="button"></button></div>
+  <div id="lista" role="list"></div>
+  <div class="lat-pie">
+    <span id="latGuardado"></span>
+    <label><span id="latRetLbl"></span><select id="retencion"><option value="0"></option><option value="30"></option><option value="90"></option></select></label>
+    <div class="fila2"><button id="exportar" type="button"></button><button id="importar" type="button"></button></div>
+    <button id="borrarTodo" type="button" class="peligro"></button>
+    <input id="archivo" type="file" accept="application/json,.json" hidden>
+  </div>
+</aside>
+<div class="col">
 <div id="avisos"><div id="avisosTxt"></div><div id="avisoClave"></div></div>
 <main><div id="mensajes" role="log" aria-live="polite"></div></main>
 <footer><button id="abajo" type="button" class="abajo" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button><div class="caja">
@@ -109,12 +146,15 @@
   <div class="privacidad" id="privacidad"></div>
   <span id="info" hidden></span>
 </div></footer>
+</div>
+</div>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
 const TXT = {
   en: {
-    title: "What can I help with?", sub: "This runs on the graphics card of the server PC. Your messages are kept only in this page: closing it or pressing New chat erases them.",
+    title: "What can I help with?", sub: "This runs on the graphics card of the server PC. Your chats are saved only in this browser (not on the server).",
+    chats: "Chats", noChats: "No saved chats yet.", rename: "Rename", renamePrompt: "New name for this chat:", del: "Delete", delConfirm: "Delete this chat?", delAll: "Delete all chats", delAllConfirm: "Delete ALL saved chats in this browser? This cannot be undone.", exportBtn: "Export", importBtn: "Import", saved: "Saved only in this browser.", noSave: "This browser does not allow saving chats (private mode?). Chats will be lost when you close the page.", keep: "Auto-delete:", keepNever: "Never", keep30: "After 30 days", keep90: "After 90 days", imported: "Imported {n} chat(s).", importBad: "That file is not a valid chats export.", untitled: "New conversation",
     send: "Send", stop: "Stop", newChat: "New chat", panel: "Panel", placeholder: "Write a message… (Enter to send, Shift+Enter for a new line)",
     system: "System instruction", systemPh: "Optional. Example: Answer briefly, in Spanish.",
     keyNeeded: "This server asks for an access key:", keyBtn: "Use key", keyBad: "That key was not accepted.",
@@ -126,7 +166,8 @@ const TXT = {
     sug1: "Explain what a database is in 3 sentences", sug2: "Write a short, polite email asking to move a meeting", sug3: "Give me 5 ideas for a school science project"
   },
   es: {
-    title: "¿En qué puedo ayudarte?", sub: "Esto corre en la tarjeta gráfica de la PC servidora. Tus mensajes solo se guardan en esta página: al cerrarla o pulsar Nuevo chat se borran.",
+    title: "¿En qué puedo ayudarte?", sub: "Esto corre en la tarjeta gráfica de la PC servidora. Tus chats se guardan solo en este navegador (no en el servidor).",
+    chats: "Chats", noChats: "Aún no hay chats guardados.", rename: "Renombrar", renamePrompt: "Nuevo nombre para este chat:", del: "Borrar", delConfirm: "¿Borrar este chat?", delAll: "Borrar todos los chats", delAllConfirm: "¿Borrar TODOS los chats guardados en este navegador? No se puede deshacer.", exportBtn: "Exportar", importBtn: "Importar", saved: "Guardados solo en este navegador.", noSave: "Este navegador no permite guardar chats (¿modo privado?). Se perderán al cerrar la página.", keep: "Borrado automático:", keepNever: "Nunca", keep30: "A los 30 días", keep90: "A los 90 días", imported: "Se importaron {n} chat(s).", importBad: "Ese archivo no es una exportación de chats válida.", untitled: "Conversación nueva",
     send: "Enviar", stop: "Parar", newChat: "Nuevo chat", panel: "Panel", placeholder: "Escribe un mensaje… (Enter envía, Shift+Enter hace salto de línea)",
     system: "Instrucción del sistema", systemPh: "Opcional. Ejemplo: Responde breve y en español.",
     keyNeeded: "Este servidor pide una clave de acceso:", keyBtn: "Usar clave", keyBad: "Esa clave no fue aceptada.",
@@ -145,6 +186,7 @@ const CLAVE = { get() { try { return localStorage.getItem("llm_clave") || ""; } 
 const cab = (extra = {}) => Object.assign({}, extra, CLAVE.get() ? { Authorization: "Bearer " + CLAVE.get() } : {});
 
 let historial = [];          // {role, content}
+let chatId = null;           // id of the saved chat that is open (null = not saved yet)
 let ctxUsado = 0, ctxMax = 0;      // tokens the conversation used in the last answer / context size of the selected model
 let control = null, ocupado = false, requiereClave = false, claveValida = true, sesion = 0;
 
@@ -154,6 +196,10 @@ function textos() {
   $("texto").placeholder = t("placeholder"); $("ctxAvisoTxt").textContent = t("ctxNote"); $("ctxNuevo").textContent = t("newChat"); $("abajo").title = $("abajo").ariaLabel = t("toBottom");
   document.querySelectorAll(".regen").forEach((b) => { b.textContent = t("regen"); });
   $("verSistema").textContent = t("system"); $("sistema").placeholder = t("systemPh"); $("privacidad").textContent = t("privacy");
+  $("latNuevo").textContent = "+ " + t("newChat"); $("latGuardado").textContent = t("saved"); $("latRetLbl").textContent = t("keep") + " ";
+  const op = $("retencion").options; op[0].textContent = t("keepNever"); op[1].textContent = t("keep30"); op[2].textContent = t("keep90");
+  $("exportar").textContent = t("exportBtn"); $("importar").textContent = t("importBtn"); $("borrarTodo").textContent = t("delAll"); $("lat").title = t("chats");
+  pintarLista();
   if (!historial.length) vacio();
 }
 const LOGO = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' aria-hidden='true'><path d='M8 12h48'/><path d='M16 12v40M28 12v32M40 12v44M52 12v28'/><circle cx='16' cy='26' r='3.5' fill='currentColor'/><circle cx='16' cy='40' r='3.5' fill='currentColor'/><circle cx='28' cy='22' r='3.5' fill='currentColor'/><circle cx='40' cy='30' r='3.5' fill='currentColor'/><circle cx='40' cy='44' r='3.5' fill='currentColor'/><circle cx='52' cy='26' r='3.5' fill='currentColor'/></svg>";
@@ -276,6 +322,7 @@ async function estado() {
   const act = lista.find((x) => x.id === $("modelo").value) || lista[0];
   ctxMax = act && act.ctx ? act.ctx : 0; ctxPintar();
   $("avisosTxt").textContent = "";
+  if (typeof BD !== "undefined" && BD.fallo) aviso(t("noSave"));
   if (!lista.length) aviso(t("noModels"));
   else if (!conectado) aviso(t("engineOff"));
   const necesitaClave = requiereClave && (!CLAVE.get() || !claveValida);
@@ -312,12 +359,13 @@ async function enviar(regen) {
   const a = burbuja("assistant");
   const meta = document.createElement("div"); meta.className = "meta"; a.d.append(meta);
   let razon = null, razonTxt = "", cont = "", n = 0, primer = null, parado = false, cortada = false;
+  let modeloResp = $("modelo").value, info = null;
   const t0 = performance.now();
   a.cuerpo.textContent = t("waiting"); bajar(true);
   const sondeo = setInterval(async () => { if (primer) return; try { const st = await (await fetch("/api/status")).json(); if (!primer) { a.cuerpo.textContent = fase(st); } } catch {} }, 1500);
   control = new AbortController();
   const sis = $("sistema").value.trim();
-  const mensajes = (sis ? [{ role: "system", content: sis }] : []).concat(historial);
+  const mensajes = (sis ? [{ role: "system", content: sis }] : []).concat(historial.map((m) => ({ role: m.role, content: m.content })));   // the extra info of each answer stays in the browser
   try {
     const r = await fetch("/v1/chat/completions", {
       method: "POST", headers: cab({ "Content-Type": "application/json" }), signal: control.signal,
@@ -342,6 +390,7 @@ async function enviar(regen) {
         const d = linea.slice(5).trim();
         if (d === "[DONE]") continue;
         const j = JSON.parse(d);
+        if (typeof j.model === "string" && j.model) modeloResp = j.model;
         if (j.error) throw new Error(j.error.message);
         if (j.choices && j.choices[0] && j.choices[0].finish_reason === "length") cortada = true;
         const delta = (j.choices && j.choices[0] && j.choices[0].delta) || {};
@@ -355,7 +404,8 @@ async function enviar(regen) {
         if (delta.content) pintar(a.cuerpo, cont);
         if (j.usage) { n = j.usage.completion_tokens; ctxUsado = (j.usage.prompt_tokens || 0) + n; ctxPintar(); }
         const s = primer ? (performance.now() - primer) / 1000 : 0;
-        meta.textContent = t("tokens", { n }) + " · " + t("first", { s: ((primer - t0) / 1000).toFixed(1) }) + (s > 0.5 ? " · " + (n / s).toFixed(1) + " tok/s" : "");
+        info = { modelo: modeloResp, n, ttft: (primer - t0) / 1000, tps: s > 0.5 ? n / s : null };
+        meta.textContent = textoMeta(info);
         bajar();
       }
     }
@@ -370,17 +420,32 @@ async function enviar(regen) {
     if (cortada && cont) meta.append(document.createTextNode(" · " + t(ctxMax > 0 && ctxUsado >= ctxMax * 0.97 ? "cutCtx" : "cut")));
     if (parado) { meta.append(document.createTextNode(" · " + t("stopped"))); if (!cont && !razonTxt) a.cuerpo.textContent = ""; }
     if (cont) {
-      historial.push({ role: "assistant", content: cont });
-      const c = document.createElement("button"); c.type = "button"; c.textContent = t("copy");
-      c.onclick = () => { copiarTexto(cont); c.textContent = t("copied"); setTimeout(() => { c.textContent = t("copy"); }, 1200); };
-      meta.append(c);
-      document.querySelectorAll(".regen").forEach((b) => b.remove());       // only the last answer can be regenerated
-      const g = document.createElement("button"); g.type = "button"; g.className = "regen"; g.textContent = t("regen");
-      g.onclick = regenerar; meta.append(g);
+      historial.push({ role: "assistant", content: cont, info });
+      acciones(meta, cont, true);
     } else if (!a.d.classList.contains("error")) { historial.pop(); if (!razonTxt) a.d.remove(); }
     else historial.pop();
+    guardar();
     $("texto").focus(); estado();
   }
+}
+
+function textoMeta(i) {       // model · tokens · first token · speed
+  if (!i) return "";
+  const partes = [];
+  if (i.modelo) partes.push(i.modelo);
+  if (Number.isFinite(i.n)) partes.push(t("tokens", { n: i.n }));
+  if (Number.isFinite(i.ttft)) partes.push(t("first", { s: i.ttft.toFixed(1) }));
+  if (Number.isFinite(i.tps)) partes.push(i.tps.toFixed(1) + " tok/s");
+  return partes.join(" · ");
+}
+function acciones(meta, cont, ultimo) {
+  const c = document.createElement("button"); c.type = "button"; c.textContent = t("copy");
+  c.onclick = () => { copiarTexto(cont); c.textContent = t("copied"); setTimeout(() => { c.textContent = t("copy"); }, 1200); };
+  meta.append(c);
+  if (!ultimo) return;
+  document.querySelectorAll(".regen").forEach((b) => b.remove());       // only the last answer can be regenerated
+  const g = document.createElement("button"); g.type = "button"; g.className = "regen"; g.textContent = t("regen");
+  g.onclick = regenerar; meta.append(g);
 }
 
 function regenerar() {
@@ -402,10 +467,129 @@ $("abajo").onclick = () => { pegado = true; document.querySelector("main").scrol
 $("modelo").onchange = () => estado();
 $("parar").onclick = () => control && control.abort();
 $("ctxNuevo").onclick = () => $("nuevo").click();
-$("nuevo").onclick = () => { sesion++; if (control) control.abort(); historial = []; ctxUsado = 0; ctxPintar(); vacio(); pegado = true; botonAbajo(); $("texto").focus(); };
+$("nuevo").onclick = () => { sesion++; if (control) control.abort(); historial = []; chatId = null; ctxUsado = 0; pintarLista(); ctxPintar(); vacio(); pegado = true; botonAbajo(); $("texto").focus(); };
 $("verSistema").onclick = (e) => { e.preventDefault(); $("sistema").hidden = !$("sistema").hidden; if (!$("sistema").hidden) $("sistema").focus(); };
 $("lang").onchange = () => { LANG = $("lang").value; try { localStorage.setItem("quipullm_lang", LANG); } catch {} textos(); estado(); };
-textos(); estado(); setInterval(() => { if (!ocupado) estado(); }, 5000); $("texto").focus();
+
+// ---- Saved chats: kept in this browser only (IndexedDB), never sent to the server.
+const MAX_CHATS = 300;               // oldest chats are dropped beyond this (300 chats of a full context are roughly 10 MB of text)
+const BD = {
+  db: null,
+  abrir() { return new Promise((ok) => { try { const r = indexedDB.open("quipullm_chats", 1); r.onupgradeneeded = () => r.result.createObjectStore("chats", { keyPath: "id" }); r.onsuccess = () => { BD.db = r.result; ok(true); }; r.onerror = r.onblocked = () => ok(false); } catch { ok(false); } }); },
+  tx(modo, fn) { return new Promise((ok) => { if (!BD.db) return ok(null); try { const x = BD.db.transaction("chats", modo); let res = null; const q = fn(x.objectStore("chats")); if (q) q.onsuccess = () => { res = q.result; }; x.oncomplete = () => ok(res); x.onerror = x.onabort = () => ok(null); } catch { ok(null); } }); },
+  todos() { return BD.tx("readonly", (s) => s.getAll()).then((x) => x || []); },
+  poner(c) { return BD.tx("readwrite", (s) => s.put(c)); },
+  borrar(id) { return BD.tx("readwrite", (s) => s.delete(id)); },
+  vaciar() { return BD.tx("readwrite", (s) => s.clear()); }
+};
+let lista = [];
+const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const titular = (h) => { const u = h.find((m) => m.role === "user"); const x = (u ? u.content : "").replace(/\s+/g, " ").trim(); return x ? (x.length > 48 ? x.slice(0, 48) + "…" : x) : t("untitled"); };
+function ordenada() { return lista.slice().sort((a, b) => b.actualizado - a.actualizado); }
+function pintarLista() {
+  const d = $("lista"); d.textContent = "";
+  if (!lista.length) { const e = document.createElement("div"); e.className = "sinchats"; e.textContent = t("noChats"); d.append(e); return; }
+  for (const c of ordenada()) {
+    const it = document.createElement("div"); it.className = "item" + (c.id === chatId ? " activo" : ""); it.setAttribute("role", "listitem");
+    const b = document.createElement("button"); b.type = "button"; b.className = "tit"; b.textContent = c.titulo; b.title = c.titulo; b.onclick = () => mostrar(c);
+    const r = document.createElement("button"); r.type = "button"; r.className = "ic"; r.textContent = "✎"; r.title = r.ariaLabel = t("rename");
+    r.onclick = async () => { const n = prompt(t("renamePrompt"), c.titulo); if (n && n.trim()) { c.titulo = n.trim().slice(0, 120); await BD.poner(c); pintarLista(); } };
+    const x = document.createElement("button"); x.type = "button"; x.className = "ic"; x.textContent = "✕"; x.title = x.ariaLabel = t("del");
+    x.onclick = async () => { if (!confirm(t("delConfirm"))) return; await BD.borrar(c.id); lista = lista.filter((y) => y.id !== c.id); if (c.id === chatId) $("nuevo").click(); else pintarLista(); };
+    it.append(b, r, x); d.append(it);
+  }
+}
+async function guardar() {
+  if (!BD.db || !historial.length) return;
+  const ahora = Date.now();
+  if (!chatId) chatId = nuevoId();
+  let c = lista.find((y) => y.id === chatId);
+  if (!c) { c = { id: chatId, creado: ahora, titulo: titular(historial) }; lista.push(c); }
+  c.actualizado = ahora; c.modelo = $("modelo").value; c.sistema = $("sistema").value; c.ctx = ctxUsado;
+  c.mensajes = historial.map((m) => (m.info ? { role: m.role, content: m.content, info: m.info } : { role: m.role, content: m.content }));
+  await BD.poner(c);
+  const sobran = ordenada().slice(MAX_CHATS).filter((y) => y.id !== chatId);
+  for (const y of sobran) { await BD.borrar(y.id); lista = lista.filter((z) => z.id !== y.id); }
+  pintarLista();
+}
+function mostrar(c) {
+  sesion++; if (control) control.abort();
+  historial = c.mensajes.map((m) => (m.info ? { role: m.role, content: m.content, info: m.info } : { role: m.role, content: m.content })); chatId = c.id; ctxUsado = c.ctx || 0; ctxPintar();
+  if (c.modelo && [...$("modelo").options].some((o) => o.value === c.modelo)) $("modelo").value = c.modelo;
+  $("sistema").value = c.sistema || "";
+  $("mensajes").textContent = "";
+  historial.forEach((m, i) => {
+    const b = burbuja(m.role);
+    if (m.role === "user") b.cuerpo.textContent = m.content;
+    else { pintar(b.cuerpo, m.content); const meta = document.createElement("div"); meta.className = "meta"; meta.textContent = textoMeta(m.info || (c.modelo ? { modelo: c.modelo } : null)); b.d.append(meta); acciones(meta, m.content, i === historial.length - 1); }
+  });
+  pintarLista(); bajar(true); estado();
+  if (innerWidth <= 760) $("lateral").hidden = true;
+}
+async function podar() {
+  const dias = parseInt($("retencion").value, 10) || 0;
+  if (!dias || !BD.db) return;
+  const limite = Date.now() - dias * 86400000;
+  for (const c of lista.filter((y) => y.actualizado < limite && y.id !== chatId)) await BD.borrar(c.id);
+  lista = lista.filter((y) => y.actualizado >= limite || y.id === chatId);
+}
+function limpiar(c) {          // validate an imported chat: only plain text, bounded sizes
+  if (!c || typeof c !== "object" || typeof c.id !== "string" || !c.id || c.id.length > 64 || !Array.isArray(c.mensajes) || c.mensajes.length > 4000) return null;
+  const m = [];
+  const ok = (v) => typeof v === "number" && isFinite(v);
+  for (const x of c.mensajes) {
+    if (!x || (x.role !== "user" && x.role !== "assistant") || typeof x.content !== "string" || x.content.length > 400000) return null;
+    const y = { role: x.role, content: x.content };
+    if (x.role === "assistant" && x.info && typeof x.info === "object") {
+      const i = { modelo: typeof x.info.modelo === "string" ? x.info.modelo.slice(0, 200) : "" };
+      if (ok(x.info.n)) i.n = x.info.n; if (ok(x.info.ttft)) i.ttft = x.info.ttft; if (ok(x.info.tps)) i.tps = x.info.tps;
+      y.info = i;
+    }
+    m.push(y);
+  }
+  if (!m.length) return null;
+  const num = (v, d) => (typeof v === "number" && isFinite(v) ? v : d), ahora = Date.now();
+  return { id: c.id, titulo: (typeof c.titulo === "string" && c.titulo.trim() ? c.titulo : titular(m)).slice(0, 120), creado: num(c.creado, ahora), actualizado: num(c.actualizado, ahora),
+    modelo: typeof c.modelo === "string" ? c.modelo.slice(0, 200) : "", sistema: typeof c.sistema === "string" ? c.sistema.slice(0, 20000) : "", ctx: num(c.ctx, 0), mensajes: m };
+}
+$("lat").onclick = () => { $("lateral").hidden = !$("lateral").hidden; try { localStorage.setItem("quipullm_lateral", $("lateral").hidden ? "0" : "1"); } catch {} };
+$("latNuevo").onclick = () => { $("nuevo").click(); if (innerWidth <= 760) $("lateral").hidden = true; };
+$("retencion").onchange = async () => { try { localStorage.setItem("quipullm_retencion", $("retencion").value); } catch {} await podar(); pintarLista(); };
+$("borrarTodo").onclick = async () => { if (!lista.length || !confirm(t("delAllConfirm"))) return; await BD.vaciar(); lista = []; $("nuevo").click(); };
+$("exportar").onclick = () => {
+  const blob = new Blob([JSON.stringify({ app: "quipullm", version: 1, chats: ordenada() })], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "quipullm-chats-" + new Date().toISOString().slice(0, 10) + ".json";
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+$("importar").onclick = () => $("archivo").click();
+$("archivo").onchange = async () => {
+  const f = $("archivo").files[0]; $("archivo").value = ""; if (!f) return;
+  let n = 0;
+  try {
+    const j = JSON.parse(await f.text());
+    if (!j || j.app !== "quipullm" || !Array.isArray(j.chats)) throw new Error("x");
+    for (const x of j.chats.slice(0, MAX_CHATS)) {
+      const c = limpiar(x); if (!c) continue;
+      const previo = lista.find((y) => y.id === c.id);
+      if (previo && previo.actualizado >= c.actualizado) continue;     // keep the newer copy
+      await BD.poner(c); lista = lista.filter((y) => y.id !== c.id); lista.push(c); n++;
+    }
+    pintarLista(); alert(t("imported", { n }));
+  } catch { alert(t("importBad")); }
+};
+async function iniciarChats() {
+  let guardado = "0", lat = null;
+  try { guardado = localStorage.getItem("quipullm_retencion") || "0"; lat = localStorage.getItem("quipullm_lateral"); } catch {}
+  $("retencion").value = ["0", "30", "90"].includes(guardado) ? guardado : "0";
+  $("lateral").hidden = lat === null ? innerWidth <= 760 : lat !== "1";
+  if (await BD.abrir()) {
+    lista = await BD.todos();
+    await podar();
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch {}
+  } else { BD.fallo = true; $("lateral").hidden = true; $("lat").style.display = "none"; estado(); }
+  pintarLista();
+}
+textos(); iniciarChats(); estado(); setInterval(() => { if (!ocupado) estado(); }, 5000); $("texto").focus();
 </script>
 </body>
 </html>

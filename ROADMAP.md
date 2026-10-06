@@ -71,7 +71,7 @@ The test suite already runs the real engine in headless Chromium with SwiftShade
 
 `logprobs` and `n > 1` are not implemented. Since the logits are already available in JavaScript for sampling, `logprobs` should be cheap; `n > 1` needs repeated generation in one request. Verified with API tests.
 
-The `/chat` page is deliberately small. Candidates, all low risk: lists and tables in the Markdown renderer, attaching an image for vision models, exporting a conversation, and (after item 3) faster long conversations. They would be checked in a real browser against a simulated engine.
+The `/chat` page is deliberately small. Candidates, all low risk: attaching an image for vision models, and (after item 3) faster long conversations. Done in the unreleased version: Markdown (lists, tables, headings), saved chats in the browser with export/import. Not done: history on the server per user (it needs separate user accounts, which the shared key does not provide). They would be checked in a real browser against a simulated engine.
 
 ## 7. Benchmarks on other hardware
 
