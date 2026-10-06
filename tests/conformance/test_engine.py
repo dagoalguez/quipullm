@@ -84,20 +84,26 @@ JS_CACHE = """async (refs) => {
   const rel = (a, b) => { let md = 0, mr = 0; for (let i = 0; i < a.length; i++) { md = Math.max(md, Math.abs(a[i] - b[i])); mr = Math.max(mr, Math.abs(b[i])); } return md / Math.max(mr, 1e-6); };
   // the same loop as engine.js (a checkpoint before the last token; the batch never crosses it)
   const prefill = async (m, ids, saltar, conPunto) => {
-    const corte = ids.length - 1; let i = saltar, lg = null;
+    const corte = ids.length - 1, P = m.intervaloCP; let i = saltar, lg = null;
     while (i < ids.length) {
       if (conPunto && i === corte) m.guardarPunto();
       let fin = Math.min(i + TB, ids.length);
       if (conPunto && i < corte && fin > corte) fin = corte;
+      if (conPunto) { const sig = (Math.floor(i / P) + 1) * P; if (fin > sig) fin = sig; }
       lg = await m.forward(ids.slice(i, fin), fin >= ids.length);
       i = fin;
+      if (conPunto && fin < ids.length && fin % P === 0) m.guardarPunto();
     }
+    if (conPunto) m.guardarPunto();      // as the engine does after the whole prompt
     return lg;
   };
   // greedy decoding; like the engine, the last sampled token is not fed back
-  const decodificar = async (m, lg, k) => {
+  const decodificar = async (m, lg, k, conPunto) => {
     const out = [];
-    for (let j = 0; j < k; j++) { const b = argmax(lg); out.push(b); if (j < k - 1) lg = await m.forward([b], true); }
+    for (let j = 0; j < k; j++) {
+      const b = argmax(lg); out.push(b);
+      if (j < k - 1) { lg = await m.forward([b], true); if (conPunto && m.pos % m.intervaloCP === 0) m.guardarPunto(); }
+    }
     return out;
   };
   for (const [nombre, ref] of Object.entries(refs)) {
@@ -106,16 +112,17 @@ JS_CACHE = """async (refs) => {
     meta.ctx = 512;
     const m = new ModeloLFM2(gpu, meta);
     await m.load('/engine/file/' + encodeURIComponent(mm.id), () => {});
+    m.intervaloCP = 4;      // small, so that the short test prompts have several checkpoints
     const A = ref.prompts[0].ids, E = (ref.prompts[1] || ref.prompts[0]).ids.slice(0, 5);
     const K = 6, r = {opcion: m.cacheOn, nA: A.length};
-    const pedido1 = async () => { m.reset(); const l = await prefill(m, A, 0, true); return decodificar(m, l, K); };
+    const pedido1 = async () => { m.reset(); const l = await prefill(m, A, 0, true); return decodificar(m, l, K, true); };
     const completo = async (ids) => { m.reset(); const l = await prefill(m, ids, 0, false); return [l, await decodificar(m, l, K)]; };
     // 1) the chat continues: previous prompt + its answer + new text
     const g1 = await pedido1();
-    r.punto = m.puntoN;
+    r.punto = m.puntos.map((p) => p.L).includes(A.length - 1);
     const ids2 = A.concat(g1, E);
     const n1 = m.reutilizar(ids2);
-    const lc = await prefill(m, ids2, n1, true); const sc = await decodificar(m, lc, K);
+    const lc = await prefill(m, ids2, n1, true); const sc = await decodificar(m, lc, K, true);
     const [lf, sf] = await completo(ids2);
     r.cont = {n: n1, esperado: A.length + g1.length - 1, rel: rel(lc, lf), argmax: argmax(lc) === argmax(lf), seq: JSON.stringify(sc) === JSON.stringify(sf)};
     // 2) regenerate: the same prompt again
@@ -124,9 +131,20 @@ JS_CACHE = """async (refs) => {
     const lc2 = await prefill(m, A, n2, true); const sc2 = await decodificar(m, lc2, K);
     const [lf2, sf2] = await completo(A);
     r.regen = {n: n2, esperado: A.length - 1, rel: rel(lc2, lf2), argmax: argmax(lc2) === argmax(lf2), seq: JSON.stringify(sc2) === JSON.stringify(sf2)};
-    // 3) it diverges before the checkpoint: nothing may be reused
+    // 3) it diverges before every checkpoint: nothing may be reused
     await pedido1();
-    r.diverge = m.reutilizar(A.slice(0, Math.max(1, A.length >> 1)).concat(E));
+    r.diverge = m.reutilizar(A.slice(0, 2).concat((A[2] + 5) % m.vocab, E));
+    // 3b) a difference late in the history (inside the generated answer, as when its text is tokenized differently):
+    //     it must go back to the last checkpoint before it (not to the start of the answer) and give exactly the same result
+    const g1b = await pedido1();
+    const ids3 = A.concat(g1b.slice(0, 3), [(g1b[3] + 5) % m.vocab], g1b.slice(4), E);
+    const n3 = m.reutilizar(ids3);
+    const lc3 = await prefill(m, ids3, n3, true); const sc3 = await decodificar(m, lc3, K, true);
+    const [lf4, sf4] = await completo(ids3);
+    let esp3 = A.length; for (let L = A.length + 1; L <= A.length + 3; L++) if (L % 4 === 0) esp3 = L;
+    r.tarde = {n: n3, esperado: esp3, minimo: A.length, maximo: A.length + 3, rel: rel(lc3, lf4), argmax: argmax(lc3) === argmax(lf4), seq: JSON.stringify(sc3) === JSON.stringify(sf4)};
+    // 3c) after that the history is coherent and the older checkpoints are still there for a second divergence
+    r.puntos_ok = m.puntos.every((p, i, a) => p.L <= m.pos && (i === 0 || a[i - 1].L < p.L));
     // 4) negative control: pretend to reuse a state that does not belong to the prompt; the test must see the damage
     await pedido1();
     const A2 = A.slice(); A2[1] = (A2[1] + 7) % m.vocab;
@@ -182,13 +200,18 @@ async def main():
             for nombre, r in rc.items():
                 print("== caché de prompts:", nombre)
                 check(f"{nombre} caché: la opción está activa por defecto", r["opcion"] is True)
-                check(f"{nombre} caché: el punto de control queda justo antes del último token ({r['punto']})", r["punto"] == r["nA"] - 1, r)
+                check(f"{nombre} caché: queda un punto de control justo antes del último token del prompt", r["punto"] is True, r)
                 for clave, texto in (("cont", "la conversación continúa"), ("regen", "mismo prompt otra vez (regenerar)")):
                     c = r[clave]
                     check(f"{nombre} caché, {texto}: reutiliza {c['n']} tokens (esperado {c['esperado']})", c["n"] == c["esperado"] and c["n"] > 0, c)
                     check(f"{nombre} caché, {texto}: logits con caché = sin caché (dif rel {c['rel']:.1e})", c["rel"] < 2e-3, c)
                     check(f"{nombre} caché, {texto}: argmax y continuación voraz idénticos", c["argmax"] and c["seq"], c)
-                check(f"{nombre} caché: si el prompt diverge antes del punto de control no se reutiliza nada", r["diverge"] == 0, r)
+                check(f"{nombre} caché: si el prompt diverge antes de todo punto de control no se reutiliza nada", r["diverge"] == 0, r)
+                t = r["tarde"]
+                check(f"{nombre} caché, diferencia tardía en la respuesta anterior: vuelve al último punto antes de ella ({t['n']}, esperado {t['esperado']}), no al principio de la respuesta", t["n"] == t["esperado"] and t["minimo"] <= t["n"] <= t["maximo"], t)
+                check(f"{nombre} caché, diferencia tardía: logits con caché = sin caché (dif rel {t['rel']:.1e})", t["rel"] < 2e-3, t)
+                check(f"{nombre} caché, diferencia tardía: argmax y continuación voraz idénticos", t["argmax"] and t["seq"], t)
+                check(f"{nombre} caché: los puntos de control quedan ordenados y dentro de la posición", r["puntos_ok"], r)
                 check(f"{nombre} caché: control negativo, reutilizar un estado ajeno se nota (dif rel {r['control_rel']:.1e})", r["control_rel"] > 1e-2, r)
                 check(f"{nombre} caché: tras invalidar y con la opción apagada no se reutiliza", r["invalidado"] == 0 and r["apagado"] == 0, r)
                 check(f"{nombre} caché: el historial coincide con la posición", r["hist_ok"], r)

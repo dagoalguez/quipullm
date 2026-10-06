@@ -30,7 +30,7 @@
   token (one token less per image; the engine still emits it), and (3) the LFM2 tiling rule, now based on the rounded pixel area against
   `image_max_pixels` x 2 instead of each side against 2 x 512 px (the synthetic images do not exercise this one). **Not measured:** how much these
   differences change the output of the real models, and which llama.cpp build LM Studio 0.4.25 used when the reference outputs were recorded.
-- **Prompt cache is experimental and LFM2-only.** Other model families recompute the whole prompt on every request, as do requests with images. Equality with and without the cache was verified only with synthetic models; on one GTX 1050 Ti with lfm2.5-1.2b-instruct the second and third turns of a chat reused 409 of 425 and 500 of 514 tokens (first token 0.94 s and 1.08 s), but some turns of longer chats took 22.8 to 31.1 s to the first token and the cause is not identified. No comparison with the cache off was made.
+- **Prompt cache is experimental and LFM2-only.** Other model families recompute the whole prompt on every request, as do requests with images. Equality with and without the cache was verified only with synthetic models; on one GTX 1050 Ti with lfm2.5-1.2b-instruct the second and third turns of a chat reused 409 of 425 and 500 of 514 tokens (first token 0.94 s and 1.08 s), but some turns of longer chats took 22.8 to 31.1 s to the first token (the previous answer was recomputed; the likely cause, and a fix with a checkpoint every 64 tokens, are in the ROADMAP; the fix is not measured on real hardware yet). No comparison with the cache off was made.
 - 7–8B models run at roughly 2–3 tokens/s on the tested iGPU; 1B-class models at ~15 tokens/s.
 
 **Project**

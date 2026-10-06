@@ -233,6 +233,11 @@ async function generar(job) {
   const saltar = usaCache ? modelo.reutilizar(ids) : 0;
   if (!saltar) modelo.reset();
   diag.reutilizados = saltar;
+  if (usaCache && modelo.desvio && modelo.desvio.n >= 16) {
+    // Diagnostic: the previous answer, tokenized again from text, stopped matching the tokens that were generated.
+    const d = modelo.desvio, v = (a) => a.map((t) => JSON.stringify(tok.decodificar([t]))).join(" ");
+    log(`Cache mismatch at position ${d.n} of ${d.previos}: generated [${d.esperado.join(",")}] ${v(d.esperado)} vs. re-tokenized [${d.recibido.join(",")}] ${v(d.recibido)}`);
+  }
   const corte = ids.length - 1;    // a checkpoint is saved before the last token, so the same prompt can be reused again
   let logits = null;
   const TL = modelo.batch || TB;   // tokens per prompt pass (32 in the K-quant models, 8 in LFM2)
@@ -247,6 +252,7 @@ async function generar(job) {
       } else {
         fin = Math.min(i + TL, ids.length);
         if (usaCache && i < corte && fin > corte) fin = corte;
+        if (usaCache) { const sig = (Math.floor(i / modelo.intervaloCP) + 1) * modelo.intervaloCP; if (fin > sig) fin = sig; }   // batches end on checkpoint positions
         if (ext) for (let j = i; j < fin; j++) if (ext[j] && ext[j].bidir) { fin = j; break; }
       }
       const lote = ids.slice(i, fin);
@@ -256,7 +262,9 @@ async function generar(job) {
       await conLimite(S.gpu.device.queue.onSubmittedWorkDone(), 300000, "the GPU did not finish the prompt batch within 300 s");   // real time per batch
       diag.lotes_ms.push(Math.round(performance.now() - tl));
       i = fin;
+      if (usaCache && fin < ids.length && fin % modelo.intervaloCP === 0) modelo.guardarPunto();
     }
+    if (usaCache) modelo.guardarPunto();      // the state after the whole prompt: a later difference inside the answer can return here
   } finally {
     if (buffersImg.length) { S.gpu.liberar(buffersImg); buffersImg = []; }
   }
@@ -276,6 +284,7 @@ async function generar(job) {
     const siguiente = modelo.forward([id], true);   // the GPU works while we submit
     const r = await evento({ tipo: "token", id: job.id, texto, n: 1 });
     if (siguiente) logits = await siguiente;
+    if (usaCache && modelo.pos % modelo.intervaloCP === 0) modelo.guardarPunto();   // so a late difference in the history does not cost the whole answer
     if (r && r.cancelar) { razon = "stop"; break; }
     if (n % 8 === 0) ui("velocidad", `${(n / ((performance.now() - tPrompt) / 1000)).toFixed(1)} tok/s`);
   }

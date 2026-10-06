@@ -28,7 +28,10 @@ export class ModeloLFM2 {
     this.cacheOn = !(meta.options && meta.options.prompt_cache === false);
     this.hist = [];               // ids of the tokens whose effect is in the KV cache and in the convolution states
     this.cacheable = true;        // false after images or an error: the state cannot be trusted for reuse
-    this.puntoN = 0;              // position of the saved checkpoint of the convolution states (0 = none)
+    this.puntos = [];             // checkpoints of the convolution states: [{L, snaps}] (the states after the first L tokens), sorted by L
+    this.libres = [];             // snapshot buffers ready to be reused
+    this.intervaloCP = 64;        // a checkpoint every this many tokens (the engine saves them while it processes and generates)
+    this.maxPuntos = 64;
   }
 
   async load(url, progreso) {
@@ -196,47 +199,59 @@ export class ModeloLFM2 {
     this.pos = 0;
     this.hist = [];
     this.cacheable = true;
-    this.puntoN = 0;
+    this.soltarPuntos();
   }
 
   // ------------------------------------------------------------------ prompt cache
   // The KV cache is written by position, so positions < pos stay valid. The convolution states, instead, only describe the
-  // LAST processed token, so a prefix can be reused only (a) when everything processed so far is a prefix of the new prompt,
-  // or (b) by going back to a checkpoint of those states saved just before the last token of the previous prompt.
+  // LAST processed token, so the state after L tokens can only be recovered from a checkpoint taken when exactly L tokens had
+  // been processed. The engine saves one every 'intervaloCP' tokens (while processing the prompt and while generating) and one
+  // just before the last prompt token (so the very same prompt can be reused). A new prompt that shares its first n tokens with
+  // what was processed restarts from the last checkpoint at or before n (or from everything, if the whole history is a prefix).
   // Returns how many leading tokens of 'ids' are already in the state (pos is set to that), or 0 if everything must be recomputed
   // (the caller then calls reset()). It never leaves the last token unprocessed: the logits come from computing it.
   reutilizar(ids) {
+    this.desvio = null;
     if (!this.cacheOn || !this.cacheable || this.hist.length === 0 || this.pos !== this.hist.length) return 0;
     const h = this.hist, m = Math.min(h.length, ids.length);
     let n = 0;
     while (n < m && h[n] === ids[n]) n++;
+    this.desvio = n < h.length && n < ids.length ? { n, esperado: h.slice(Math.max(0, n - 2), n + 3), recibido: ids.slice(Math.max(0, n - 2), n + 3), previos: h.length } : null;
     if (n === h.length && n < ids.length) return n;
-    const q = this.puntoN;
-    if (q > 0 && n >= q && q < ids.length) {
-      const enc = this.gpu.device.createCommandEncoder();
-      for (const c of this.capas) if (c.estado && c.snap) enc.copyBufferToBuffer(c.snap, 0, c.estado, 0, c.estado._tam);
-      this.gpu.device.queue.submit([enc.finish()]);
-      h.length = q;
-      this.pos = q;
-      return q;
-    }
-    return 0;
+    let mejor = null;
+    for (const p of this.puntos) if (p.L <= n && p.L < ids.length && p.L > 0) mejor = p;
+    if (!mejor) return 0;
+    const enc = this.gpu.device.createCommandEncoder();
+    this.capas.forEach((c, k) => { if (c.estado && mejor.snaps[k]) enc.copyBufferToBuffer(mejor.snaps[k], 0, c.estado, 0, c.estado._tam); });
+    this.gpu.device.queue.submit([enc.finish()]);
+    while (this.puntos.length && this.puntos[this.puntos.length - 1].L > mejor.L) this.libres.push(this.puntos.pop().snaps);   // later ones no longer describe this history
+    h.length = mejor.L;
+    this.pos = mejor.L;
+    return mejor.L;
   }
 
   // Saves the convolution states at the current position (the KV cache below it is final).
   guardarPunto() {
-    if (!this.cacheOn || !this.cacheable || this.pos !== this.hist.length) return;
-    const enc = this.gpu.device.createCommandEncoder();
-    for (const c of this.capas) {
-      if (!c.estado) continue;
-      if (!c.snap) { c.snap = this.gpu.buffer(c.estado._tam, undefined, "conv_snap"); this.bufs.push(c.snap); }
-      enc.copyBufferToBuffer(c.estado, 0, c.snap, 0, c.estado._tam);
+    if (!this.cacheOn || !this.cacheable || this.pos !== this.hist.length || this.pos <= 0) return;
+    let p = this.puntos.find((x) => x.L === this.pos);
+    if (!p) {
+      if (this.puntos.length >= this.maxPuntos) this.libres.push(this.puntos.shift().snaps);     // the oldest one goes
+      const snaps = this.libres.pop() || this.capas.map((c) => {
+        if (!c.estado) return null;
+        const b = this.gpu.buffer(c.estado._tam, undefined, "conv_snap"); this.bufs.push(b); return b;
+      });
+      p = { L: this.pos, snaps };
+      this.puntos.push(p);
+      this.puntos.sort((a, b) => a.L - b.L);
     }
+    const enc = this.gpu.device.createCommandEncoder();
+    this.capas.forEach((c, k) => { if (c.estado && p.snaps[k]) enc.copyBufferToBuffer(c.estado, 0, p.snaps[k], 0, c.estado._tam); });
     this.gpu.device.queue.submit([enc.finish()]);
-    this.puntoN = this.pos;
   }
 
-  invalidar() { this.cacheable = false; this.hist = []; this.puntoN = 0; }
+  soltarPuntos() { for (const p of this.puntos) this.libres.push(p.snaps); this.puntos = []; }
+
+  invalidar() { this.cacheable = false; this.hist = []; this.soltarPuntos(); }
 
   // ------------------------------------------------------------------ forward pass
   // Processes up to TB tokens from the current position. If conLogits, returns a Float32Array with the logits of the last one.
