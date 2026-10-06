@@ -228,18 +228,25 @@ async function generar(job) {
   }
   const maxTok = p.max_tokens > 0 ? Math.min(p.max_tokens, ctx - ids.length) : ctx - ids.length;
   estado(`Processing prompt (${ids.length} tokens)...`);
-  modelo.reset();
+  // Prompt cache: if the state left by the previous request is a prefix of this prompt, only the new tokens are computed.
+  const usaCache = !ext && !!modelo.cacheOn;
+  const saltar = usaCache ? modelo.reutilizar(ids) : 0;
+  if (!saltar) modelo.reset();
+  diag.reutilizados = saltar;
+  const corte = ids.length - 1;    // a checkpoint is saved before the last token, so the same prompt can be reused again
   let logits = null;
   const TL = modelo.batch || TB;   // tokens per prompt pass (32 in the K-quant models, 8 in LFM2)
   try {
-    let i = 0;
+    let i = saltar;
     while (i < ids.length) {
+      if (usaCache && i === corte) modelo.guardarPunto();
       let fin;
       if (ext && ext[i] && ext[i].bidir) {   // a Gemma 3 image goes whole in one batch (non-causal attention)
         fin = i;
         while (fin < ids.length && ext[fin] && ext[fin].bidir && ext[fin].buf === ext[i].buf) fin++;
       } else {
         fin = Math.min(i + TL, ids.length);
+        if (usaCache && i < corte && fin > corte) fin = corte;
         if (ext) for (let j = i; j < fin; j++) if (ext[j] && ext[j].bidir) { fin = j; break; }
       }
       const lote = ids.slice(i, fin);
@@ -276,9 +283,9 @@ async function generar(job) {
   if (cola) await evento({ tipo: "token", id: job.id, texto: cola, n: 0 });
   const seg = (performance.now() - tPrompt) / 1000;
   const tps = n > 0 && seg > 0 ? +(n / seg).toFixed(2) : null;
-  const tpsPrompt = +(ids.length / Math.max(ttft, 1e-3)).toFixed(1);
+  const tpsPrompt = +((ids.length - saltar) / Math.max(ttft, 1e-3)).toFixed(1);   // speed over the tokens actually computed
   ui("velocidad", `${tps ?? "-"} tok/s  ·  prompt ${tpsPrompt} tok/s`);
-  log(`Done: ${ids.length} prompt tokens (${tpsPrompt} tok/s), ${n} generated (${tps} tok/s). First token ${ttft.toFixed(2)} s; prompt batches (ms): ${diag.lotes_ms.join(", ")}; model ${diag.modelo_ms} ms; tokenize ${diag.tok_ms} ms`);
+  log(`Done: ${ids.length} prompt tokens${saltar ? ` (${saltar} reused from the previous request)` : ""} (${tpsPrompt} tok/s), ${n} generated (${tps} tok/s). First token ${ttft.toFixed(2)} s; prompt batches (ms): ${diag.lotes_ms.join(", ")}; model ${diag.modelo_ms} ms; tokenize ${diag.tok_ms} ms`);
   await evento({ tipo: "fin", id: job.id, razon, prompt_tokens: ids.length, completion_tokens: n, tps,
     ttft: +ttft.toFixed(3), tps_prompt: tpsPrompt, diag });
 }
@@ -319,6 +326,7 @@ async function atender(job) {
   } catch (e) {
     log(`Error: ${e.message}`);
     console.error(e);
+    if (S.modelo && S.modelo.invalidar) S.modelo.invalidar();   // the state may be half-written: do not reuse it
     await evento({ tipo: "error", id: job.id, mensaje: e.message, codigo: e.codigo || 500 }).catch(() => {});
     if (S.gpu && S.gpu.perdido) { S.gpu = null; S.modelo = null; S.modeloId = null; }
   } finally {

@@ -60,6 +60,12 @@
   td.celdachat { white-space:nowrap; } td.celdachat input[type=checkbox] { width:auto; vertical-align:middle; margin-right:4px; } td.celdachat button { padding:2px 8px; }
   details.avanzado { margin-top:10px; border-top:1px solid #eef0f3; padding-top:8px; }
   details.avanzado > summary { cursor:pointer; color:var(--acento); font-weight:600; padding:2px 0; }
+  #bannerCarga { display:none; background:#eef6ff; border-bottom:1px solid var(--linea); padding:10px 20px; font-weight:600; color:var(--acento); }
+  #bannerCarga .barra { height:6px; background:#d6e6f7; border-radius:3px; margin-top:7px; overflow:hidden; }
+  #bannerCarga .barra i { display:block; height:100%; width:0; background:var(--acento); transition:width .4s; }
+  #bannerCarga.indef .barra i { width:35%; animation:vaiven 1.2s ease-in-out infinite alternate; }
+  @keyframes vaiven { from { margin-left:0 } to { margin-left:65% } }
+  button.cargando { opacity:1; color:var(--acento); border-color:var(--acento); }
 </style>
 </head>
 <body>
@@ -72,6 +78,7 @@
   <select id="lang" aria-label="Language" style="width:auto;padding:3px 6px"><option value="en">English</option><option value="es">Español</option></select>
   <span class="tenue" id="version"></span>
 </header>
+<div id="bannerCarga" role="status" aria-live="polite"><span id="txtCarga"></span><div class="barra"><i id="barraCarga"></i></div></div>
 <main>
   <section class="tarjeta">
     <h2 data-i="reach"></h2>
@@ -360,6 +367,9 @@ const I18N = {
  "gtDisc": "dedicated",
  "gtUnk": "not identified",
  "phase_queued": "queued",
+ "loadingModel": "Loading model {m}… {p}",
+ "loadingModelWait": "Starting to load {m}… (the engine window may take a few seconds to react)",
+ "loadingBtn": "Loading…", "loadedBtn": "Loaded", "badgeLoading": "engine: loading model",
  "phase_sent to engine": "sent to engine",
  "phase_generating": "generating",
  "secs": "s",
@@ -508,6 +518,9 @@ const I18N = {
  "gtDisc": "dedicada",
  "gtUnk": "no identificada",
  "phase_queued": "en cola",
+ "loadingModel": "Cargando el modelo {m}… {p}",
+ "loadingModelWait": "Empezando a cargar {m}… (la ventana del motor puede tardar unos segundos en reaccionar)",
+ "loadingBtn": "Cargando…", "loadedBtn": "Cargado", "badgeLoading": "motor: cargando modelo",
  "phase_sent to engine": "enviado al motor",
  "phase_generating": "generando",
  "secs": "s",
@@ -549,9 +562,21 @@ async function refrescar() {
   if (!cfgCargada) cargarCfg();
   const m = st.engine;
   const ins = $("insMotor");
-  if (m.connected) { ins.className = "insignia ok"; ins.textContent = st.current_job ? t("badgeWorking") : t("badgeReady"); }
+  const trab = st.current_job, cargaReal = !!(trab && trab.action === "cargar");
+  if (cargaReal && CARGA_LOCAL) CARGA_LOCAL.visto = true;      // the server has taken the job: from now on the server decides
+  if (CARGA_LOCAL && !trab && (CARGA_LOCAL.visto || Date.now() - CARGA_LOCAL.t > 12000 || (m.loaded_model === CARGA_LOCAL.id && Date.now() - CARGA_LOCAL.t > 4000))) CARGA_LOCAL = null;
+  if (CARGA_LOCAL && Date.now() - CARGA_LOCAL.t > 600000) CARGA_LOCAL = null;
+  const cargando = cargaReal || !!CARGA_LOCAL;
+  const idCarga = cargaReal ? trab.model : (CARGA_LOCAL && CARGA_LOCAL.id);
+  const pct = cargaReal ? ((/(\d+)%/.exec(trab.phase || "") || [])[1]) : null;
+  $("bannerCarga").style.display = cargando ? "block" : "none";
+  $("bannerCarga").classList.toggle("indef", cargando && pct == null);
+  $("txtCarga").textContent = cargando ? (cargaReal ? t("loadingModel", { m: idCarga || "", p: pct != null ? pct + "%" : "" }) : t("loadingModelWait", { m: idCarga || "" })) : "";
+  $("barraCarga").style.width = pct != null ? pct + "%" : "";
+  document.querySelectorAll("#tablaModelos button[data-cargar]").forEach((b) => { const es = cargando && b.dataset.cargar === idCarga; const ya = !cargando && b.dataset.cargar === m.loaded_model; b.disabled = cargando || ya; b.classList.toggle("cargando", es); b.textContent = es ? t("loadingBtn") : (ya ? t("loadedBtn") : t("load")); });
+  if (m.connected) { ins.className = "insignia ok"; ins.textContent = cargando ? t("badgeLoading") : (st.current_job ? t("badgeWorking") : t("badgeReady")); }
   else { ins.className = "insignia mal"; ins.textContent = t("badgeOff"); }
-  $("insTrabajo").textContent = st.current_job ? `${st.current_job.model} · ${t("phase_" + st.current_job.phase)} · ${st.current_job.tokens} tokens · ${st.current_job.seconds}${t("secs")}` : "";
+  $("insTrabajo").textContent = st.current_job ? `${st.current_job.model} · ${I18N[LANG]["phase_" + st.current_job.phase] ?? st.current_job.phase} · ${st.current_job.tokens} tokens · ${st.current_job.seconds}${t("secs")}` : "";
   $("mEstado").textContent = m.connected ? (st.current_job ? t("stWorking") : t("stReady")) : (REMOTO ? t("stOffRemote") : t("stOffLocal"));
   const info = m.info || {};
   $("mGpu").textContent = (info.gpu && (info.gpu.summary || info.gpu)) || "—";
@@ -587,7 +612,7 @@ async function refrescar() {
       return `<tr class="${m.loaded_model === x.id ? "cargado" : ""}">
         <td class="mono" title="${esc(t("alsoAnswers") + x.match_keys.join(", "))}">${esc(x.id)}${x.vision_ok ? `<span class="etq si">${t("vision")}</span>` : (x.vision ? `<span class="etq no" title="${esc(t("visionBadTip"))}">${t("visionBad")}</span>` : "")}<div class="tenue" style="font-size:12px">${esc(x.file)}</div></td>
         <td>${esc(x.arch)} ${est}</td><td class="mono">${esc(x.quantization)}</td><td class="mono">${x.gb} GB</td><td>${memoria(x)}</td><td class="mono">${x.ctx}</td><td class="celdachat">${celdaChat(x, st)}</td>
-        <td>${x.supported ? `<button onclick="cargar('${esc(x.id)}')">${esc(t("load"))}</button>` : ""}</td></tr>`;
+        <td>${x.supported ? `<button data-cargar="${esc(x.id)}" onclick="cargar('${esc(x.id)}')"${m.loaded_model === x.id ? " disabled" : ""}>${esc(t(m.loaded_model === x.id ? "loadedBtn" : "load"))}</button>` : ""}</td></tr>`;
     }).join("") || `<tr><td colspan="8" class="tenue">${t("noModels")}</td></tr>`;
     renderGen(st);
     const sel = $("pModelo"), prev = sel.value;
@@ -654,9 +679,11 @@ function chatMover(id, d) {
 }
 $("btnChatTodos").onclick = () => chatGuardar([]);
 
+let CARGA_LOCAL = null;      // {id, t}: the click is shown at once, before the next status poll reports the job
 async function cargar(id) {
+  CARGA_LOCAL = { id, t: Date.now() }; refrescar();
   const r = await fetch("/api/load", { method: "POST", headers: cab({ "Content-Type": "application/json" }), body: JSON.stringify({ model: id }) });
-  if (!r.ok) alert((await r.json()).error.message);
+  if (!r.ok) { CARGA_LOCAL = null; refrescar(); alert((await r.json()).error.message); }
 }
 $("btnDescargar").onclick = () => fetch("/api/unload", { method: "POST", headers: cab(), body: "{}" });
 $("btnEscanear").onclick = async () => { await fetch("/api/rescan", { method: "POST", headers: cab(), body: "{}" }); ultimoModelos = ""; refrescar(); };

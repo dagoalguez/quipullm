@@ -119,6 +119,7 @@ CONFIG_DEFECTO = {
     "max_queue": 64,            # waiting requests; when full it answers 429 (0 = unlimited)
     "gpu_memory_gb": 0,       # 0 = estimate automatically; a number forces the memory budget for models (GB)
     "tiled_prefill": True,   # tiled prefill kernel (K-quant models); False = the v2.0 method
+    "prompt_cache": True,    # reuse the previous request's state when the new prompt continues it (LFM2 models only for now)
     "open_engine": True,
     "default_max_tokens": 0,  # response length when the request does not say (0 = until the context is full, as before)
     "max_tokens_limit": 0,    # hard cap on the response length, whatever the request asks (0 = none; the context still limits it)
@@ -235,7 +236,7 @@ def validar_ajustes(d):
             errores.append("The API key cannot contain spaces or be longer than 200 characters")
         else:
             cambios["api_key"] = clave
-    for k in ("open_engine", "memory_check"):
+    for k in ("open_engine", "memory_check", "prompt_cache"):
         if k in d:
             cambios[k] = bool(d[k])
     if "model_overrides" in d:
@@ -800,7 +801,8 @@ class Registro:
                              "ctx": self.ctx_para(m),
                              "overrides": self.cfg.get("model_overrides", {}).get(m["id"], {}),
                              "arch_options": (manifiesto_de(m["arch"]) or {}).get("options", {}),
-                             "options": {"tiled_prefill": bool(self.cfg.get("tiled_prefill", True))}},
+                             "options": {"tiled_prefill": bool(self.cfg.get("tiled_prefill", True)),
+                                        "prompt_cache": bool(self.cfg.get("prompt_cache", True))}},
                             ensure_ascii=False).encode("utf-8")
         with self.lock:
             if len(self._meta_cache) >= 2:
@@ -1951,6 +1953,8 @@ class Manejador(BaseHTTPRequestHandler):
                 self._comprobar_memoria(m)
             if not puente.motor_conectado() and not ESTADO.get("auto_relanzar"):
                 raise ErrorAPI(503, "The engine is not connected", "service_unavailable")
+            if m and puente.motor_conectado() and puente.motor.get("modelo_cargado") == m["id"]:
+                return self._json(200, {"ok": True, "already_loaded": True})      # nothing to do: it is already loaded
             self._comprobar_cola()
             accion = {"/api/load": "cargar", "/api/unload": "descargar"}[ruta]   # protocol names used with the engine
             puente.encolar(Trabajo(accion, m, origen=self.client_address[0]))
@@ -2045,7 +2049,7 @@ class Manejador(BaseHTTPRequestHandler):
                       "seconds_since_contact": round(time.time() - puente.motor["visto"], 1)
                       if puente.motor["visto"] else None},
             "current_job": {"id": activo.id, "model": activo.modelo["id"] if activo.modelo else None,
-                               "phase": activo.fase, "tokens": activo.tokens,
+                               "phase": activo.fase, "tokens": activo.tokens, "action": activo.accion,
                                "seconds": round(time.time() - (activo.inicio or time.time()), 1)} if activo else None,
             "queued": len(puente.pendientes),
             "stats": {"requests": puente.stats["peticiones"], "tokens_generated": puente.stats["tokens_generados"],

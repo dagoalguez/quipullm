@@ -24,6 +24,11 @@ export class ModeloLFM2 {
     this.vocab = kv["tokenizer.ggml.tokens"].length;
     this.bufs = [];
     this.supportsImages = true;   // forward() accepts external embeddings (vision)
+    // Prompt cache (config.json "prompt_cache"): keep the state between requests and compute only the new tokens.
+    this.cacheOn = !(meta.options && meta.options.prompt_cache === false);
+    this.hist = [];               // ids of the tokens whose effect is in the KV cache and in the convolution states
+    this.cacheable = true;        // false after images or an error: the state cannot be trusted for reuse
+    this.puntoN = 0;              // position of the saved checkpoint of the convolution states (0 = none)
   }
 
   async load(url, progreso) {
@@ -189,7 +194,49 @@ export class ModeloLFM2 {
       if (c.estado) this.gpu.device.queue.writeBuffer(c.estado, 0, new Float32Array(c.estado._tam / 4));
     }
     this.pos = 0;
+    this.hist = [];
+    this.cacheable = true;
+    this.puntoN = 0;
   }
+
+  // ------------------------------------------------------------------ prompt cache
+  // The KV cache is written by position, so positions < pos stay valid. The convolution states, instead, only describe the
+  // LAST processed token, so a prefix can be reused only (a) when everything processed so far is a prefix of the new prompt,
+  // or (b) by going back to a checkpoint of those states saved just before the last token of the previous prompt.
+  // Returns how many leading tokens of 'ids' are already in the state (pos is set to that), or 0 if everything must be recomputed
+  // (the caller then calls reset()). It never leaves the last token unprocessed: the logits come from computing it.
+  reutilizar(ids) {
+    if (!this.cacheOn || !this.cacheable || this.hist.length === 0 || this.pos !== this.hist.length) return 0;
+    const h = this.hist, m = Math.min(h.length, ids.length);
+    let n = 0;
+    while (n < m && h[n] === ids[n]) n++;
+    if (n === h.length && n < ids.length) return n;
+    const q = this.puntoN;
+    if (q > 0 && n >= q && q < ids.length) {
+      const enc = this.gpu.device.createCommandEncoder();
+      for (const c of this.capas) if (c.estado && c.snap) enc.copyBufferToBuffer(c.snap, 0, c.estado, 0, c.estado._tam);
+      this.gpu.device.queue.submit([enc.finish()]);
+      h.length = q;
+      this.pos = q;
+      return q;
+    }
+    return 0;
+  }
+
+  // Saves the convolution states at the current position (the KV cache below it is final).
+  guardarPunto() {
+    if (!this.cacheOn || !this.cacheable || this.pos !== this.hist.length) return;
+    const enc = this.gpu.device.createCommandEncoder();
+    for (const c of this.capas) {
+      if (!c.estado) continue;
+      if (!c.snap) { c.snap = this.gpu.buffer(c.estado._tam, undefined, "conv_snap"); this.bufs.push(c.snap); }
+      enc.copyBufferToBuffer(c.estado, 0, c.snap, 0, c.estado._tam);
+    }
+    this.gpu.device.queue.submit([enc.finish()]);
+    this.puntoN = this.pos;
+  }
+
+  invalidar() { this.cacheable = false; this.hist = []; this.puntoN = 0; }
 
   // ------------------------------------------------------------------ forward pass
   // Processes up to TB tokens from the current position. If conLogits, returns a Float32Array with the logits of the last one.
@@ -252,9 +299,11 @@ export class ModeloLFM2 {
     dev.queue.submit([enc.finish()]);
     if (validar) {
       const err = await dev.popErrorScope();
-      if (err) throw new Error("WebGPU rejected the computation: " + err.message);
+      if (err) { this.invalidar(); throw new Error("WebGPU rejected the computation: " + err.message); }
       if (T === 1 && conLogits) this._validado = true;
     }
+    if (hayExt) this.cacheable = false;
+    else if (this.cacheable) for (const t of ids) this.hist.push(t);
     this.pos += T;
     if (!conLogits) return null;
     await this.lectura.mapAsync(GPUMapMode.READ);

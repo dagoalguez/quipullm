@@ -598,6 +598,7 @@ def main():
         time.sleep(0.4)
         cod, st, _ = c.pedir("/api/status")
         check("status muestra trabajo actual y cola", st["current_job"] is not None and st["queued"] == 1, (st["current_job"], st["queued"]))
+        check("status: current_job tells the action (chat, load...)", "action" in (st["current_job"] or {}), st["current_job"])
         h1.join(); h2.join()
         check("dos peticiones simultáneas: ambas terminan", res["a"][0] == 200 and res["b"][0] == 200)
         orden = [j["prompt"] for j in motor.recibidos[-2:]]
@@ -763,6 +764,13 @@ def main():
         cod, r, _ = c.pedir("/api/load", {"model": "lfm2-1.2b-rag"})
         time.sleep(0.5)
         check("/api/load envía 'cargar' al motor", cod == 202 and motor.recibidos[-1]["accion"] == "cargar", motor.recibidos[-1])
+        n_rec = len(motor.recibidos)
+        motor.post("/engine/api/event", {"tipo": "estado", "modelo_cargado": "lfm2-1.2b-rag", "estado": "listo"})   # the engine reports it has the model
+        cod, r, _ = c.pedir("/api/load", {"model": "lfm2-1.2b-rag"})
+        time.sleep(0.3)
+        check("/api/load of the model that is already loaded does nothing (200 already_loaded, no job sent)",
+              cod == 200 and r.get("already_loaded") is True and len(motor.recibidos) == n_rec, (cod, r))
+        motor.post("/engine/api/event", {"tipo": "estado", "modelo_cargado": None, "estado": "listo"})
         cod, r, _ = c.pedir("/api/rescan", {})
         check("/api/rescan vuelve a leer la carpeta", cod == 200 and len(r["models"]) == 16)
 
@@ -1275,6 +1283,10 @@ def resiliencia():
     check("examples/agent-chat.html loads nothing from the internet", not re.findall(r'(?:src|href)\s*=\s*["\']https?://|url\(\s*["\']?https?://|@import', ej))
     check("examples/agent-chat.html inserts the model's text as text (no .innerHTML = )", ".innerHTML" not in ej)
     check("chat.html does not use innerHTML (model output is inserted as text)", "innerHTML" not in chat)
+    check("chat.html renders Markdown (headings, lists, tables, quotes, italics) with DOM nodes, not HTML; suggests a new chat near the context limit (it never drops or summarises messages silently)",
+          "function bloques" in chat and 'createElement("h" + m[1].length)' in chat and 'id="ctxAviso"' in chat and "prepararContexto" not in chat and 'finish_reason === "length"' in chat)
+    check("chat.html: regenerate button on the last answer, scroll-to-bottom arrow, no forced scroll when reading above",
+          'className = "regen"' in chat and "function regenerar" in chat and 'id="abajo"' in chat and "pegado" in chat)
     check("chat.html shows the context counter (usage.prompt_tokens + completion_tokens against the model's ctx)",
           'id="ctxInfo"' in chat and "j.usage.prompt_tokens" in chat and "act.ctx" in chat and 'ctx: "Context:' in chat and 'ctx: "Contexto:' in chat)
     panel = open(os.path.join(AQUI, "web", "panel.html"), encoding="utf-8").read()
@@ -1282,6 +1294,8 @@ def resiliencia():
     for lang in ("en", "es"):
         bloque = panel.split("  %s: {" % lang, 1)[1].split("\n},", 1)[0]
         claves[lang] = set(re.findall(r'^ "([A-Za-z0-9_ ]+)":', bloque, re.M))
+    check("panel: loading banner with progress while a model loads, button shows 'Loading…'",
+          'id="bannerCarga"' in panel and "CARGA_LOCAL" in panel and 'trab.action === "cargar"' in panel)
     check("panel i18n: English and Spanish have the same keys", claves["en"] == claves["es"], sorted(claves["en"] ^ claves["es"]))
     usadas = set(re.findall(r'data-ih?="([A-Za-z0-9_]+)"', panel))
     check("panel i18n: every data-i / data-ih key exists", usadas <= claves["en"], sorted(usadas - claves["en"]))
