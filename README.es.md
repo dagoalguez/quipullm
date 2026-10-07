@@ -17,9 +17,9 @@ python server.py
 Lee archivos **GGUF** estándar y sus rutas de texto y de embeddings se comparan número por número con llama.cpp
 (ver [Cómo se verifica](#cómo-se-verifica)). Abre <http://localhost:1234/chat> para una página de chat, o apunta cualquier cliente OpenAI a él.
 
-![Panel de control](docs/img/panel.png)
+![Panel de control](docs/img/panel-es.png)
 
-![Página de chat](docs/img/chat.png)
+![Página de chat](docs/img/chat-es.png)
 
 > **Estado: versión temprana (4.2.x).** Medido en tres máquinas: Windows con GPU integrada Intel (comparada con LM Studio),
 > Windows con una GTX 1050 Ti y un portátil Linux antiguo con Intel HD 4000 (las dos últimas con solo dos corridas por modelo). AMD, Apple y
