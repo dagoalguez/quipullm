@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- Tool calling smoke test repeated with gemma-3-4b-it on the GTX 1050 Ti (3 runs per kind): all 12 cases right. Numbers and caveats in docs/BENCHMARKS.md. No code change.
+
 ## 4.2.0
 - **Chat page**: Markdown is now rendered (headings, bullet and numbered lists, quotes, tables, rules, bold, italics, code), always built from DOM nodes so the model's text cannot inject HTML. From 80 % of the context the counter turns red and a notice suggests starting a new chat; if a prompt no longer fits, the page says so in plain words instead of showing the raw server error; an answer cut by the length limit says so. Nothing is dropped or summarised behind your back (an automatic summary was tried and removed: with a 1.2B model it lost or mixed up facts). On the server side, a prompt that does not fit still returns an error and a reply that reaches the context ends with `finish_reason: "length"`.
 - **Chat page: saved chats.** Conversations are now saved in the browser itself (IndexedDB), never on the server, and listed in a side panel: open, rename, delete, delete all, export and import as JSON (imports are validated and only plain text is accepted). Up to 300 chats are kept (the oldest are dropped beyond that); an optional "auto-delete after 30 / 90 days" setting is off by default. Chats belong to the browser, not to a person: two people on the same browser profile share them, and they do not travel between devices (use export/import). If the browser blocks storage (private mode), the page says so. Server-side, per-user history is not implemented. Checked in headless Chromium against a simulated server (tests/conformance/test_chat_ui.py); not tried on other browsers.

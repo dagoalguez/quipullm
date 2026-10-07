@@ -102,6 +102,8 @@ Before these, a one-tool, weather-only run of the first wording gave 5/5 valid c
 - The model wrote its calls in its own native format (`<|tool_call_start|>[get_weather(city="Lima")]<|tool_call_end|>`), which the server understands.
 - A 7B Qwen2.5-Coder model was refused on this PC by the memory check (about 5.0 GB needed against 3.9 GB estimated), so there is no 7B result.
 
+**Gemma 3 4B (measured on 2026-10-06, same PC, same script, temperature 0, 3 runs per kind, current instruction wording).** Model `gemma-3-4b-it` (the Q4_K_M file of the table above). Weather 3/3 right tool and 3/3 answers that use the result; time 3/3 and 3/3; no tool (tools offered) 3/3; control 3/3. Seconds per case: weather 22-27, time 26-34 (two requests each), no tool 5-40, control 2-38; the longest ones are long answers (the French greeting), so the time mostly follows the length of the answer. Gemma is not among the native formats the server parses (LFM2, Qwen/Hermes), so its calls went through the generic format. Three runs per kind is a smoke test: it does not show that Gemma is better than LFM2 (LFM2 refused 1 of 3 no-tool questions in the same test), and it says nothing about harder cases (more tools, longer conversations, other languages).
+
 ## Vision
 
 | Test | Result |
