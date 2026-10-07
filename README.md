@@ -21,7 +21,7 @@ It reads standard **GGUF** files, and its text and embedding paths are checked n
 
 ![Chat page](docs/img/chat.png)
 
-> **Status: early release (4.1.x).** Measured on three machines: Windows with an Intel iGPU (compared against LM Studio),
+> **Status: early release (4.2.x).** Measured on three machines: Windows with an Intel iGPU (compared against LM Studio),
 > Windows with a GTX 1050 Ti, and an old Linux laptop with an Intel HD 4000 (the last two with only two runs per model). AMD, Apple and
 > recent Linux GPUs are **unmeasured**. Everything we know to be missing or weak is in [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 

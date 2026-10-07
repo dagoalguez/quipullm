@@ -1,5 +1,5 @@
 quipullm
-Copyright 2026 Diego Alvaro Ever Guevara Bazan (see AUTHORS)
+Copyright 2026 Diego Guevara B. (see AUTHORS)
 
 This product includes an independent implementation of GGUF model loading, tokenization and inference.
 It reads the GGUF file format and is validated against llama.cpp (https://github.com/ggml-org/llama.cpp, MIT License)

@@ -4,9 +4,9 @@ This is a list of intentions, **not a promise or a schedule**. Items are ordered
 
 The rule for every item is the same as for the existing engine: it is done when the conformance tests say so, not when the output "looks right" (see [How it is verified](README.md#how-it-is-verified)).
 
-**What works today (4.1):** OpenAI/LM Studio-compatible API (chat, streaming, completions, embeddings, vision for two families), a built-in chat page, a control panel, `--share` for a small team, and the architectures listed in the README, all verified against llama.cpp. This page is about what comes next.
+**What works today (4.2):** OpenAI/LM Studio-compatible API (chat, streaming, completions, embeddings, vision for two families), a built-in chat page, a control panel, `--share` for a small team, and the architectures listed in the README, all verified against llama.cpp. This page is about what comes next.
 
-**Recently done:** chat page and `--share` (4.1.0).
+**Recently done:** chat page and `--share` (4.1.0); in 4.2.0 saved chats in the browser, Markdown, regenerate, a loading banner in the panel, the experimental prompt cache for LFM2 and experimental tool calling.
 
 ## Summary
 
@@ -43,7 +43,7 @@ The test suite already runs the real engine in headless Chromium with SwiftShade
 
 ## 3. Prompt caching
 
-**Today:** experimental for LFM2 models only (unreleased development version): the engine reuses the prompt prefix shared with the previous request, using a snapshot of the convolution state taken just before the last prompt token. Equality with and without the cache was checked on the synthetic models (identical logits). Measured once on a GTX 1050 Ti with lfm2.5-1.2b-instruct: the second turn reused 409 of 425 tokens and the third 500 of 514, with first token in 0.94 s and 1.08 s; in other turns of longer conversations the first token took 22.8 to 31.1 s: the log showed that only the previous prompt was reused and the previous answer was recomputed. The most likely cause is that the answer, converted back to tokens, differs from what the model generated; the engine now keeps a checkpoint every 64 tokens so only what follows the difference is recomputed. That fix passes the synthetic-model tests and has not been measured on real hardware yet. No comparison with the cache turned off was made. Other families (Gemma 3 sliding window, DeepSeek compressed cache, plain-KV models) are not done, and requests with images are not cached. Before this, each request reset the model and recomputed the whole prompt, so long multi-turn conversations pay for the full history every time. For scale, measured prefill on the test machine: a 1.2B LFM2 took about 2.3 s for 62 tokens (about 28 tok/s); an 8B Granite 2.3–3.4 s for 58–76 tokens (see [BENCHMARKS.md](docs/BENCHMARKS.md)).
+**Today:** experimental for LFM2 models only (4.2.0): the engine reuses the prompt prefix shared with the previous request, using a snapshot of the convolution state taken just before the last prompt token. Equality with and without the cache was checked on the synthetic models (identical logits). Measured once on a GTX 1050 Ti with lfm2.5-1.2b-instruct: the second turn reused 409 of 425 tokens and the third 500 of 514, with first token in 0.94 s and 1.08 s; in other turns of longer conversations the first token took 22.8 to 31.1 s: the log showed that only the previous prompt was reused and the previous answer was recomputed. The most likely cause is that the answer, converted back to tokens, differs from what the model generated; the engine now keeps a checkpoint every 64 tokens so only what follows the difference is recomputed. That fix passes the synthetic-model tests and has not been measured on real hardware yet. No comparison with the cache turned off was made. Other families (Gemma 3 sliding window, DeepSeek compressed cache, plain-KV models) are not done, and requests with images are not cached. Before this, each request reset the model and recomputed the whole prompt, so long multi-turn conversations pay for the full history every time. For scale, measured prefill on the test machine: a 1.2B LFM2 took about 2.3 s for 62 tokens (about 28 tok/s); an 8B Granite 2.3–3.4 s for 58–76 tokens (see [BENCHMARKS.md](docs/BENCHMARKS.md)).
 
 **What we would do:** keep the KV cache between requests and reuse the longest common prefix of token ids; only compute the new tokens. Careful handling is needed for sliding-window layers (Gemma 3), the convolution state of LFM2 and the compressed cache of DeepSeek, which do not all behave like a plain KV cache.
 
@@ -51,7 +51,7 @@ The test suite already runs the real engine in headless Chromium with SwiftShade
 
 ## 4. Tool / function calling
 
-**Today:** experimental, in the unreleased development version. A generic mode like LM Studio's "default mode": the tools are described in the system message, the model writes `[TOOL_REQUEST]{...}[END_TOOL_REQUEST]` (or its own native format: LFM2 and Qwen/Hermes are understood) and the server returns OpenAI `tool_calls`, also when streaming. Measured with one model on one PC (lfm2.5-1.2b-instruct, 3 runs per kind): it chose the right tool between two 6 of 6 times, but refused 1 of 3 ordinary questions once tools were offered ([BENCHMARKS.md](docs/BENCHMARKS.md)). Not done: rendering the tools with each model's own chat template, other model families, larger models, enforced JSON arguments.
+**Today:** experimental, in 4.2.0. A generic mode like LM Studio's "default mode": the tools are described in the system message, the model writes `[TOOL_REQUEST]{...}[END_TOOL_REQUEST]` (or its own native format: LFM2 and Qwen/Hermes are understood) and the server returns OpenAI `tool_calls`, also when streaming. Measured with one model on one PC (lfm2.5-1.2b-instruct, 3 runs per kind): it chose the right tool between two 6 of 6 times, but refused 1 of 3 ordinary questions once tools were offered ([BENCHMARKS.md](docs/BENCHMARKS.md)). Not done: rendering the tools with each model's own chat template, other model families, larger models, enforced JSON arguments.
 
 **What we would do:** accept `tools` and `tool_choice`; render them into the model's chat template (the template interpreter in `templates.py` already supports `tojson` and `namespace`, which tool templates use); parse the model's tool-call output into the OpenAI `tool_calls` format, including streaming. The output format differs between model families, so it would start with one or two families and grow.
 
@@ -71,7 +71,7 @@ The test suite already runs the real engine in headless Chromium with SwiftShade
 
 `logprobs` and `n > 1` are not implemented. Since the logits are already available in JavaScript for sampling, `logprobs` should be cheap; `n > 1` needs repeated generation in one request. Verified with API tests.
 
-The `/chat` page is deliberately small. Candidates, all low risk: attaching an image for vision models, and (after item 3) faster long conversations. Done in the unreleased version: Markdown (lists, tables, headings), saved chats in the browser with export/import. Not done: history on the server per user (it needs separate user accounts, which the shared key does not provide). They would be checked in a real browser against a simulated engine.
+The `/chat` page is deliberately small. Candidates, all low risk: attaching an image for vision models, and (after item 3) faster long conversations. Done in 4.2.0: Markdown (lists, tables, headings), saved chats in the browser with export/import. Not done: history on the server per user (it needs separate user accounts, which the shared key does not provide). They would be checked in a real browser against a simulated engine.
 
 ## 7. Benchmarks on other hardware
 

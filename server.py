@@ -46,7 +46,7 @@ try:
 except Exception:   # the server keeps working (with fallback templates)
     templates = None
 
-VERSION = "4.1.0"
+VERSION = "4.2.0"
 ESPERA_REAPERTURA = 90   # seconds a waiting request keeps waiting for the engine window to be reopened (auto-relaunch)
 DIR = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.join(DIR, "web")

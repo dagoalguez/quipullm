@@ -83,7 +83,7 @@ Before tiled prefill (v2.1.1) a 43-token prompt on qwen 7B took about 10 s for t
 
 ## Tool calling (experimental)
 
-Measured on 2026-10-04 and 2026-10-05 with a development version after 4.1.0 (not yet released), on the **Windows PC** of the table above: Intel Core i5-8400, NVIDIA GeForce GTX 1050 Ti 4 GB
+Measured on 2026-10-04 and 2026-10-05 with the development version that became 4.2.0, on the **Windows PC** of the table above: Intel Core i5-8400, NVIDIA GeForce GTX 1050 Ti 4 GB
 (driver 32.0.15.6094), 15.9 GiB RAM, Windows 11 Pro 25H2 (build 26200.6584), Microsoft Edge 154.0.4258.53. Model: lfm2.5-1.2b-instruct (Q8_0). Script: `tools/probar_tools.py`, temperature 0.
 **Three runs of each kind** (different questions each), so these are small smoke tests, not rates.
 
@@ -98,7 +98,7 @@ Two tools are offered (`get_weather(city)`, `get_time(city)`). "Weather" and "ti
 
 Before these, a one-tool, weather-only run of the first wording gave 5/5 valid calls and 5/5 text answers after the result (22–24 s per run).
 
-- With tools offered, a request takes longer even when no tool is used: about 14 s for a "no tool" question against 1–3 s for the same question without tools, and 27–33 s for the two-request tool cases. The longer prompt is reprocessed on every request (there is no prompt caching).
+- With tools offered, a request takes longer even when no tool is used: about 14 s for a "no tool" question against 1–3 s for the same question without tools, and 27–33 s for the two-request tool cases. The longer prompt was reprocessed on every request in these runs: the LFM2 prompt cache (4.2.0) had not been used yet in this test, and this test was not repeated with it.
 - The model wrote its calls in its own native format (`<|tool_call_start|>[get_weather(city="Lima")]<|tool_call_end|>`), which the server understands.
 - A 7B Qwen2.5-Coder model was refused on this PC by the memory check (about 5.0 GB needed against 3.9 GB estimated), so there is no 7B result.
 
