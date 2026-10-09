@@ -32,6 +32,7 @@ control (see [LIMITATIONS.md](LIMITATIONS.md)).
 | `web/arch/*.json` | architecture manifests ([ARCH_GUIDE](ARCH_GUIDE.md)) |
 | `web/js/engine.js` | engine loop, job handling, model lifecycle, architecture registry |
 | `web/js/gpu.js` | WebGPU device, all WGSL kernels, helpers |
+| `web/js/decision.js` | decision models (d1): label tokens, the "systemone" prompt, scores of one forward pass |
 | `web/js/weights.js`, `kquants.js`, `kds.js` | GGUF tensor loading; K-quant / IQ4_NL decoding inside the kernels |
 | `web/js/transformer.js` | dense decoder (qwen2/qwen3/llama/granite/gemma3) |
 | `web/js/lfm2.js`, `deepseek2.js`, `bert.js`, `vision.js` | LFM2, DeepSeek MLA+MoE, embeddings, ViT encoders |

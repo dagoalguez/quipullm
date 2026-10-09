@@ -98,6 +98,9 @@ Your numbers will differ. Two more machines (a GTX 1050 Ti on Windows and an Int
 
 - OpenAI-compatible endpoints: `/v1/chat/completions` (streaming and not), `/v1/completions`, `/v1/embeddings`, `/v1/models`,
   plus LM Studio's `/api/v0/models`. Existing code only needs a different `base_url` (default port `1234`).
+- Decision models (Liquid AI **d1**, text only): `POST /v1/systemone` answers typed questions (`choice`, `noul` = yes/no, `score`)
+  in one forward pass, with no text generated; same request and answer format as llama.cpp's `/v1/systemone`. Checked against
+  llama.cpp with a synthetic model only, not yet with the real d1 weights; see [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 - Reasoning models: `<think>` is returned separately in `reasoning_content`, like LM Studio.
 - Vision: images as base64 `image_url` (LFM2-VL and Gemma 3). It runs on the tested machine (timings in
   [docs/BENCHMARKS.md](docs/BENCHMARKS.md)); its conformance suite matches llama.cpp as of `llama-cpp-python` 0.3.35 but not

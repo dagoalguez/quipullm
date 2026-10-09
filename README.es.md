@@ -97,6 +97,9 @@ Tus números serán distintos. Otras dos máquinas (una GTX 1050 Ti en Windows y
 
 - Endpoints compatibles con OpenAI: `/v1/chat/completions` (con y sin streaming), `/v1/completions`, `/v1/embeddings`,
   `/v1/models` y `/api/v0/models` de LM Studio. El código existente solo cambia el `base_url` (puerto `1234` por defecto).
+- Modelos de decisión (**d1** de Liquid AI, solo texto): `POST /v1/systemone` responde preguntas tipadas (`choice`, `noul` = sí/no,
+  `score`) en una sola pasada, sin generar texto; mismo formato de petición y respuesta que el `/v1/systemone` de llama.cpp.
+  Comprobado contra llama.cpp solo con un modelo sintético, todavía no con los pesos reales de d1; ver [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 - Modelos de razonamiento: `<think>` se devuelve aparte en `reasoning_content`, como LM Studio.
 - Visión: imágenes en base64 con `image_url` (LFM2-VL y Gemma 3). Funciona en el equipo probado (tiempos en
   [docs/BENCHMARKS.md](docs/BENCHMARKS.md)); su batería de conformidad coincide con llama.cpp de `llama-cpp-python` 0.3.35 pero

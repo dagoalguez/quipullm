@@ -69,7 +69,7 @@ def entrenar_bpe(n_merges=260):
     return tokens, tipos, merges
 
 
-def crear(nombre, tipo_mat="Q8_0", swa=0, fusion_qkv=False, add_bos=True, semilla=0):
+def crear(nombre, tipo_mat="Q8_0", swa=0, fusion_qkv=False, add_bos=True, semilla=0, extra=None, escala_salida=1.0):
     rng = np.random.default_rng(semilla)
     tokens, tipos, merges = entrenar_bpe()
     V, D, F, nh, hd, L = len(tokens), 64, 128, 4, 16, 3
@@ -118,7 +118,7 @@ def crear(nombre, tipo_mat="Q8_0", swa=0, fusion_qkv=False, add_bos=True, semill
                      raw_dtype=gguf.GGMLQuantizationType.Q8_0)
     else:
         w.add_tensor("token_embd.weight", emb.astype(np.float16))
-    vec("token_embd_norm.weight", D)
+    vec("token_embd_norm.weight", D, centro=escala_salida, ruido=0.2 * escala_salida)   # smaller = flatter output probabilities
     for i, nkv in enumerate(capas_kv):
         p = "blk.%d." % i
         vec(p + "attn_norm.weight", D)
@@ -140,6 +140,8 @@ def crear(nombre, tipo_mat="Q8_0", swa=0, fusion_qkv=False, add_bos=True, semill
             mat(p + "attn_output.weight", D, nh * hd, 1.0)
             vec(p + "attn_q_norm.weight", hd)
             vec(p + "attn_k_norm.weight", hd)
+    if extra:
+        extra(w)      # more metadata (for example, the decision type of a d1 model)
     w.write_header_to_file()
     w.write_kv_data_to_file()
     w.write_tensors_to_file()

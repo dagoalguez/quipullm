@@ -7,6 +7,7 @@ import { ModeloDeepseek2 } from "./deepseek2.js";
 import { ModeloBert } from "./bert.js";
 import { ModeloVision, decodificarImagen, preprocesarImagen, redimensionar } from "./vision.js";
 import { Muestreador } from "./sampling.js";
+import { etiquetas, armarPrompt, puntajes } from "./decision.js";
 
 // Core classes that a declarative manifest can name in "base". Architectures are discovered in web/arch/*.json
 // (the server lists them at /api/architectures); a manifest with "modulo" loads its own class with import().
@@ -325,11 +326,49 @@ async function embeber(job) {
   await evento({ tipo: "fin", id: job.id, razon: "stop", prompt_tokens: total, completion_tokens: 0, embeddings: vectores });
 }
 
+// ------------------------------------------------------------------ decision models (d1)
+// Each question is one prompt and one forward pass: nothing is generated. The server sends the text of the values
+// already rendered (see decision_preparar in server.py) and turns the scores into probabilities.
+async function decidir(job) {
+  const tJob = performance.now();
+  await asegurarModelo(job.modelo, job.id);
+  const tok = S.tok, modelo = S.modelo;
+  const preguntas = (job.params && job.params.preguntas) || [];
+  const TL = modelo.batch || TB;
+  const res = {};
+  let total = 0;
+  for (let k = 0; k < preguntas.length; k++) {
+    const q = preguntas[k];
+    const { textos, grupos } = etiquetas(tok, q);
+    const ids = tok.codificar(armarPrompt(q, textos), { addBos: false });
+    if (ids.length >= modelo.ctx) {
+      const e = new Error(`the prompt of question '${q.id}' has ${ids.length} tokens and the model context is ${modelo.ctx}. Shorten the state or, in config.json, raise "kv_max_mb" or set "model_overrides": {"<model>": {"ctx": N}}.`);
+      e.codigo = 400; throw e;
+    }
+    estado(`Deciding ${k + 1}/${preguntas.length} (${ids.length} tokens)...`);
+    modelo.reset();
+    let logits = null;
+    for (let i = 0; i < ids.length; i += TL) {
+      const fin = Math.min(i + TL, ids.length);
+      logits = await conLimite(modelo.forward(ids.slice(i, fin), fin >= ids.length), 300000, "the GPU did not respond within 300 s processing the prompt (video driver reset?)");
+      await conLimite(S.gpu.device.queue.onSubmittedWorkDone(), 300000, "the GPU did not finish the prompt batch within 300 s");
+      if (ids.length > TL) evento({ tipo: "progreso", id: job.id, fase: `question ${k + 1}/${preguntas.length}: prompt ${fin}/${ids.length}` }).catch(() => {});
+    }
+    res[q.id] = { puntajes: Array.from(puntajes(logits, grupos)), etiquetas: textos, tokens: ids.length };
+    total += ids.length;
+  }
+  if (modelo.invalidar) modelo.invalidar();   // the state belongs to the last prompt: never reuse it for text generation
+  const seg = (performance.now() - tJob) / 1000;
+  log(`Decision: ${preguntas.length} question(s), ${total} prompt tokens in ${seg.toFixed(2)} s`);
+  await evento({ tipo: "fin", id: job.id, razon: "stop", prompt_tokens: total, completion_tokens: 0, decisiones: res });
+}
+
 async function atender(job) {
   S.ocupado = true;
   try {
     if (job.accion === "generar") await generar(job);
     else if (job.accion === "embeber") await embeber(job);
+    else if (job.accion === "decidir") await decidir(job);
     else if (job.accion === "cargar") { await asegurarModelo(job.modelo, job.id); await evento({ tipo: "fin", id: job.id, razon: "stop" }); }
     else if (job.accion === "descargar") { await descargarModelo(); await informarEstado(); await evento({ tipo: "fin", id: job.id, razon: "stop" }); }
   } catch (e) {

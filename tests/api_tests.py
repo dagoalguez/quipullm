@@ -12,6 +12,7 @@ Needs neither the GPU nor the real models; it works in a temporary folder.
 """
 import http.client
 import json
+import math
 import os
 import shutil
 import socket
@@ -45,6 +46,7 @@ MODELOS = [
     ("lmstudio-community/Mistral-Nemo-Instruct-2407-GGUF/mmproj-pixtral-F16.gguf", "clip"),
     ("nomic/nomic-embed-text-v1.5.Q4_K_M.gguf", "nomic-bert"),
     ("otros/Mamba-Test-Q4_0.gguf", "mamba"),
+    ("acme/d1-test-GGUF/d1-test-Q8_0.gguf", "lfm2"),
     ("acme/Tpl-Qwen-GGUF/tpl-qwen-Q4_K_M.gguf", "qwen2"),
     ("acme/Tpl-Mistral-GGUF/tpl-mistral-Q3_K_L.gguf", "llama"),
 ]
@@ -58,6 +60,7 @@ PLANTILLA_MISTRAL = ("{{ bos_token }}{% for m in messages %}{% if m['role'] == '
                      "{% elif m['role'] == 'assistant' %}{{ m['content'] + eos_token }}"
                      "{% else %}{{ raise_exception('Only user and assistant roles are supported!') }}{% endif %}{% endfor %}")
 EXTRA = {
+    "d1-test-Q8_0.gguf": [("lfm2.decision.type", 8, "lfm2-d1")],
     "tpl-qwen-Q4_K_M.gguf": [("qwen2.block_count", 4, 32), ("qwen2.attention.head_count", 4, 32),
                              ("qwen2.attention.head_count_kv", 4, 8), ("qwen2.attention.key_length", 4, 128),
                              ("qwen2.embedding_length", 4, 4096), ("tokenizer.chat_template", 8, PLANTILLA_QWEN)],
@@ -186,6 +189,15 @@ class MotorFalso(threading.Thread):
             vec = [[len(t) / 100.0, 0.5, -0.25, float(i)] for i, t in enumerate(entradas)]
             self.post("/engine/api/event", {"tipo": "fin", "id": jid, "razon": "stop", "embeddings": vec,
                                             "prompt_tokens": sum(len(t.split()) + 2 for t in entradas), "completion_tokens": 0})
+            return
+        if job["accion"] == "decidir":
+            # scores log(1), log(2), ...: the probabilities are 1/S, 2/S, ... (S = n(n+1)/2) and the last option wins
+            qs = job["params"]["preguntas"]
+            if any("FALLA" in q["instrucciones"] for q in qs):
+                self.post("/engine/api/event", {"tipo": "error", "id": jid, "mensaje": "falla simulada", "codigo": 500})
+                return
+            dec = {q["id"]: {"puntajes": [math.log(i + 1) for i in range(len(q["opciones"]))], "etiquetas": [], "tokens": 10} for q in qs}
+            self.post("/engine/api/event", {"tipo": "fin", "id": jid, "razon": "stop", "prompt_tokens": 10 * len(qs), "completion_tokens": 0, "decisiones": dec})
             return
         if job["accion"] != "generar":
             self.post("/engine/api/event", {"tipo": "fin", "id": jid, "razon": "stop"})
@@ -346,7 +358,7 @@ def main():
         print("\n== Modelos y nombres")
         cod, r, _ = c.pedir("/v1/models")
         ids = [m["id"] for m in r["data"]]
-        check("/v1/models lista 16 modelos (sin mmproj)", cod == 200 and len(ids) == 16, ids)
+        check("/v1/models lista 17 modelos (sin mmproj)", cod == 200 and len(ids) == 17, ids)
         check("ningún mmproj en la lista", not any("mmproj" in i for i in ids))
         cod, r, _ = c.pedir("/api/v0/models")
         tipos = {m["id"]: m["type"] for m in r["data"]}
@@ -388,6 +400,72 @@ def main():
               and motor.recibidos[-1]["modelo"]["arch"] == "nomic-bert", motor.recibidos[-1])
         cod, r, _ = c.pedir("/v1/embeddings", {"model": "nomic-embed-text-v1.5", "input": "solo uno"})
         check("/v1/embeddings acepta 'input' como texto suelto y alias del modelo", cod == 200 and len(r["data"]) == 1, (cod, r))
+        cod, r, _ = c.pedir("/api/status")
+
+        print("\n== Modelos de decisión (/v1/systemone)")
+        dm = next(m for m in r["models"] if m["id"].startswith("d1-test"))
+        check("el registro marca el modelo de decisión (clave lfm2.decision.type)", dm["decision"] is True and dm["supported"], dm)
+        check("los modelos normales no son de decisión", not any(m["decision"] for m in r["models"] if m["id"] != dm["id"]))
+        cod, lm, _ = c.pedir("/api/v0/models")
+        check("/api/v0/models: tipo 'decision' solo para ese modelo", cod == 200 and {x["id"]: x["type"] for x in lm["data"]}[dm["id"]] == "decision"
+              and sum(1 for x in lm["data"] if x["type"] == "decision") == 1, lm)
+        cod, r, _ = c.pedir("/v1/chat/completions", {"model": dm["id"], "messages": [{"role": "user", "content": "x"}]})
+        check("chat con un modelo de decisión: 400 que apunta a /v1/systemone", cod == 400 and "systemone" in r["error"]["message"], r)
+        cuerpo = {"model": dm["id"], "state": {"cliente": "Ñ", "total": 2.50}, "questions": {
+            "ruta": {"type": "choice", "instructions": "Equipo?", "criteria": {"ventas": None, "soporte": "ayuda", "otro_equipo": None}},
+            "enojado": {"type": "noul", "instructions": "Enojado?"},
+            "urgencia": {"type": "score", "instructions": {"q": "u"}, "criteria": ["a", "b", "c", "d"]}}}
+        cod, r, _ = c.pedir("/v1/systemone", cuerpo)
+        check("/v1/systemone 200 con modelo, answers y usage", cod == 200 and r["model"] == dm["id"] and set(r["answers"]) == {"ruta", "enojado", "urgencia"}
+              and r["usage"] == {"input_tokens": 30, "output_tokens": 0}, (cod, r))
+        if cod == 200:
+            a = r["answers"]
+            check("choice: la última opción gana con 3/6 y confianza (3/6-1/3)/(2/3)", a["ruta"]["choice"] == "otro_equipo"
+                  and abs(a["ruta"]["probabilities"]["otro_equipo"] - 0.5) < 1e-12 and abs(a["ruta"]["probabilities"]["ventas"] - 1 / 6) < 1e-12
+                  and abs(a["ruta"]["confidence"] - 0.25) < 1e-12 and list(a["ruta"]["probabilities"]) == ["ventas", "soporte", "otro_equipo"], a["ruta"])
+            check("noul: P(true) = 1/3 (el motor recibe 'true' primero)", abs(a["enojado"]["noul"] - 1 / 3) < 1e-12 and set(a["enojado"]) == {"type", "noul"}, a["enojado"])
+            check("score: esperado 2.0, probabilidades 0.1..0.4 y leyenda con las descripciones", abs(a["urgencia"]["score"] - 2.0) < 1e-12
+                  and abs(a["urgencia"]["probabilities"]["3"] - 0.4) < 1e-12 and a["urgencia"]["legend"] == {"0": "a", "1": "b", "2": "c", "3": "d"}, a["urgencia"])
+            check("score: confianza entre 0 y 1", 0 <= a["urgencia"]["confidence"] <= 1, a["urgencia"])
+        job = motor.recibidos[-1]
+        qs = {q["id"]: q for q in job["params"]["preguntas"]}
+        check("el motor recibió accion 'decidir' con las preguntas", job["accion"] == "decidir" and list(qs) == ["ruta", "enojado", "urgencia"], job["accion"])
+        check("el estado llega como JSON con sangría de 2 y float como C++ (2.5)", qs["ruta"]["estado"] == '{\n  "cliente": "Ñ",\n  "total": 2.5\n}', qs["ruta"]["estado"])
+        check("las instrucciones que no son texto llegan como JSON", qs["urgencia"]["instrucciones"] == '{"q": "u"}', qs["urgencia"]["instrucciones"])
+        check("noul: opciones en el orden del modelo (true, false); descripciones nulas", [o["key"] for o in qs["enojado"]["opciones"]] == ["true", "false"]
+              and all(o["es_nulo"] for o in qs["enojado"]["opciones"]), qs["enojado"]["opciones"])
+        check("choice: descripción nula = es_nulo y sin verdad; con texto = verdad", [(o["es_nulo"], o["verdad"]) for o in qs["ruta"]["opciones"]] == [(True, False), (False, True), (True, False)])
+        check("score: claves 0..n-1", [o["key"] for o in qs["urgencia"]["opciones"]] == ["0", "1", "2", "3"])
+        cod, r, _ = c.pedir("/v1/systemone", {"state": "x", "questions": {"q": {"type": "noul", "instructions": "x"}}})
+        check("/v1/systemone sin 'model' usa el modelo de decisión", cod == 200 and abs(r["answers"]["q"]["noul"] - 1 / 3) < 1e-12 and r["model"] == dm["id"], (cod, r))
+        cod, r, _ = c.pedir("/v1/systemone", {"model": dm["id"], "state": None, "questions": {"q": {"type": "noul", "instructions": "x"}}})
+        check("state null permitido; llega como null al motor", cod == 200 and motor.recibidos[-1]["params"]["preguntas"][0]["estado"] is None, (cod, r))
+        for nombre, cuerpo2, codigo in (
+                ("sin state", {"questions": {"q": {"type": "noul", "instructions": "x"}}}, 400),
+                ("questions vacío", {"state": "x", "questions": {}}, 400),
+                ("instructions ausente", {"state": "x", "questions": {"q": {"type": "noul"}}}, 400),
+                ("choice sin criteria", {"state": "x", "questions": {"q": {"type": "choice", "instructions": "x"}}}, 400),
+                ("score con 1 nivel", {"state": "x", "questions": {"q": {"type": "score", "instructions": "x", "criteria": ["a"]}}}, 400),
+                ("score con 11 niveles", {"state": "x", "questions": {"q": {"type": "score", "instructions": "x", "criteria": list("abcdefghijk")}}}, 400),
+                ("noul con criteria que no es objeto", {"state": "x", "questions": {"q": {"type": "noul", "instructions": "x", "criteria": ["a"]}}}, 400),
+                ("tipo desconocido", {"state": "x", "questions": {"q": {"type": "otra", "instructions": "x"}}}, 400),
+                ("más de 255 opciones", {"state": "x", "questions": {"q": {"type": "choice", "instructions": "x", "criteria": {"o%d" % i: None for i in range(256)}}}}, 400),
+                ("imágenes", {"state": "x", "images": ["data:image/png;base64,AA"], "questions": {"q": {"type": "noul", "instructions": "x"}}}, 501),
+                ("vídeos", {"state": "x", "videos": ["a"], "questions": {"q": {"type": "noul", "instructions": "x"}}}, 501),
+                ("imagen en el state", {"state": {"messages": [{"role": "user", "content": [{"type": "image_url", "image_url": {"url": "data:x"}}]}]},
+                                        "questions": {"q": {"type": "noul", "instructions": "x"}}}, 501)):
+            cod, r, _ = c.pedir("/v1/systemone", dict(cuerpo2, model=dm["id"]))
+            check("/v1/systemone " + nombre + ": " + str(codigo), cod == codigo and "error" in r, (cod, r))
+        cod, r, _ = c.pedir("/v1/systemone", {"model": dm["id"], "state": "x", "questions": {"q": {"type": "choice", "instructions": "x", "criteria": 5}}})
+        check("el error de una pregunta dice cuál (questions.q)", cod == 400 and "questions.q" in r["error"]["message"], r)
+        cod, r, _ = c.pedir("/v1/systemone", {"model": "lfm2.5-1.2b-instruct", "state": "x", "questions": {"q": {"type": "noul", "instructions": "x"}}})
+        check("/v1/systemone con un modelo que no es de decisión: 501", cod == 501, (cod, r))
+        cod, r, _ = c.pedir("/v1/systemone", {"model": "no-existe", "state": "x", "questions": {"q": {"type": "noul", "instructions": "x"}}})
+        check("/v1/systemone con modelo inexistente: 404", cod == 404, (cod, r))
+        cod, r, _ = c.pedir("/v1/systemone", {"model": dm["id"], "state": "x", "questions": {"q": {"type": "noul", "instructions": "FALLA"}}})
+        check("error del motor se devuelve como error", cod == 500 and "simulada" in r["error"]["message"], (cod, r))
+        cod, r, _ = c.pedir("/v1/systemone", {"model": dm["id"], "state": "x", "questions": {"q": {"type": "choice", "instructions": "x", "criteria": {"a": 1, "b": 0, "c": [], "d": "t"}}}})
+        check("choice: descripción 0, [] o nula cuenta como sin descripción (verdad falsa)", cod == 200 and [o["verdad"] for o in motor.recibidos[-1]["params"]["preguntas"][0]["opciones"]] == [True, False, False, True], (cod, r))
         cod, r, _ = c.pedir("/v1/embeddings", {"input": "sin modelo"})
         check("/v1/embeddings sin 'model' usa el modelo de embeddings disponible", cod == 200 and len(r["data"]) == 1, (cod, r))
         cod, r, _ = c.pedir("/v1/embeddings", {"model": "nomic-embed-text-v1.5", "input": "x", "encoding_format": "base64"})
@@ -772,7 +850,7 @@ def main():
               cod == 200 and r.get("already_loaded") is True and len(motor.recibidos) == n_rec, (cod, r))
         motor.post("/engine/api/event", {"tipo": "estado", "modelo_cargado": None, "estado": "listo"})
         cod, r, _ = c.pedir("/api/rescan", {})
-        check("/api/rescan vuelve a leer la carpeta", cod == 200 and len(r["models"]) == 16)
+        check("/api/rescan vuelve a leer la carpeta", cod == 200 and len(r["models"]) == 17)
 
         print("\n== Configuración desde el panel")
         cod, st, _ = c.pedir("/api/status")
@@ -799,7 +877,7 @@ def main():
         cod, st, _ = c.pedir("/api/status")
         check("status refleja la carpeta nueva", st["models_dir"] == otra and st["models"] == [], st["models_dir"])
         cod, r, _ = c.pedir("/api/config", {"models_dir": carpeta, "port": puerto + 1})
-        check("volver a la carpeta original recupera los modelos; puerto nuevo pide reiniciar", cod == 200 and r["models"] == 16 and r["restart_required"] is True, r)
+        check("volver a la carpeta original recupera los modelos; puerto nuevo pide reiniciar", cod == 200 and r["models"] == 17 and r["restart_required"] is True, r)
         check("el puerto no cambia en caliente", r["config"]["port"] == puerto, r["config"]["port"])
         cod, r, _ = c.pedir("/api/folders?path=" + urllib.request.quote(carpeta))
         check("explorador: lista subcarpetas y cuenta .gguf", cod == 200 and r["path"] == os.path.abspath(carpeta) and len(r["folders"]) >= 1, r)
@@ -1283,6 +1361,8 @@ def resiliencia():
     check("examples/agent-chat.html loads nothing from the internet", not re.findall(r'(?:src|href)\s*=\s*["\']https?://|url\(\s*["\']?https?://|@import', ej))
     check("examples/agent-chat.html inserts the model's text as text (no .innerHTML = )", ".innerHTML" not in ej)
     check("chat.html does not use innerHTML (model output is inserted as text)", "innerHTML" not in chat)
+    panel_h = open(os.path.join(RAIZ, "web", "panel.html"), encoding="utf-8").read() if "RAIZ" in globals() else ""
+    check("chat.html and panel.html have the About dialog (author and license)", all("acercaFondo" in x and "Diego Guevara B." in x and "Apache-2.0" in x for x in (chat, panel_h)) if panel_h else "acercaFondo" in chat)
     check("chat.html renders Markdown (headings, lists, tables, quotes, italics) with DOM nodes, not HTML; suggests a new chat near the context limit (it never drops or summarises messages silently)",
           "function bloques" in chat and 'createElement("h" + m[1].length)' in chat and 'id="ctxAviso"' in chat and "prepararContexto" not in chat and 'finish_reason === "length"' in chat)
     check("chat.html: regenerate button on the last answer, scroll-to-bottom arrow, no forced scroll when reading above",

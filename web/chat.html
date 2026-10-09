@@ -34,6 +34,21 @@
   .col { flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; }
   .lateral { width:272px; flex:none; display:flex; flex-direction:column; background:var(--panel); border-right:1px solid var(--linea); min-height:0; }
   .lateral[hidden] { display:none; }
+  .acerca-fondo { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; padding:16px; }
+  .acerca-fondo[hidden] { display:none; }
+  .acerca { position:relative; background:var(--panel); color:var(--texto); border:1px solid var(--linea); border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.35); padding:26px 28px 22px; width:100%; max-width:480px; max-height:100%; overflow-y:auto; text-align:center; font-size:14px; line-height:1.5; }
+  .acerca-logo { color:var(--acento); }
+  .acerca h2 { margin:6px 0 2px; font-size:20px; text-transform:none; letter-spacing:0; color:var(--texto); }
+  .acerca-ver { color:var(--tenue); font-size:13px; margin-bottom:10px; }
+  .acerca p { margin:8px 0; }
+  .acerca-tabla { width:100%; border-collapse:collapse; margin:12px 0; text-align:left; }
+  .acerca-tabla th, .acerca-tabla td { padding:7px 10px; border-top:1px solid var(--linea); vertical-align:top; }
+  .acerca-tabla tr:last-child th, .acerca-tabla tr:last-child td { border-bottom:1px solid var(--linea); }
+  .acerca-tabla th { width:34%; color:var(--tenue); font-weight:600; }
+  .acerca-copy { color:var(--tenue); font-size:12.5px; }
+  .acerca-x { position:absolute; top:8px; right:12px; background:none; border:none; color:var(--tenue); font-size:24px; line-height:1; cursor:pointer; }
+  .lat-pie .acerca-pie { border:none; color:var(--tenue); font-size:12px; padding:6px 4px; }
+  .acerca-cerrar { font-family:inherit; font-size:14px; margin-top:8px; padding:8px 26px; border-radius:10px; border:1px solid var(--acento); background:var(--acento); color:#fff; cursor:pointer; }
   .lat-cab { padding:10px; }
   .lat-cab button, .lat-pie button { width:100%; font-family:inherit; font-size:13px; padding:7px 10px; border-radius:10px; border:1px solid var(--linea); background:transparent; color:var(--texto); cursor:pointer; }
   .lat-cab button:hover, .lat-pie button:hover { border-color:var(--acento); }
@@ -125,9 +140,28 @@
     <label><span id="latRetLbl"></span><select id="retencion"><option value="0"></option><option value="30"></option><option value="90"></option></select></label>
     <div class="fila2"><button id="exportar" type="button"></button><button id="importar" type="button"></button></div>
     <button id="borrarTodo" type="button" class="peligro"></button>
+    <button id="acerca" type="button" class="acerca-pie"></button>
     <input id="archivo" type="file" accept="application/json,.json" hidden>
   </div>
 </aside>
+<div id="acercaFondo" class="acerca-fondo" hidden>
+  <div class="acerca" role="dialog" aria-modal="true" aria-labelledby="acercaTitulo">
+    <button id="acercaX" type="button" class="acerca-x" aria-label="Close">&times;</button>
+    <svg class="acerca-logo" width="56" height="56" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M8 12h48"/><path d="M16 12v40M28 12v32M40 12v44M52 12v28"/><circle cx="16" cy="26" r="3.5" fill="currentColor"/><circle cx="16" cy="40" r="3.5" fill="currentColor"/><circle cx="28" cy="22" r="3.5" fill="currentColor"/><circle cx="40" cy="30" r="3.5" fill="currentColor"/><circle cx="40" cy="44" r="3.5" fill="currentColor"/><circle cx="52" cy="26" r="3.5" fill="currentColor"/></svg>
+    <h2 id="acercaTitulo"></h2>
+    <div id="acercaVer" class="acerca-ver"></div>
+    <p id="acercaDesc"></p>
+    <table class="acerca-tabla">
+      <tr><th id="acAutorK"></th><td id="acAutorV"></td></tr>
+      <tr><th id="acContrK"></th><td id="acContrV"></td></tr>
+      <tr><th id="acLicK"></th><td id="acLicV"></td></tr>
+      <tr><th id="acRepoK"></th><td id="acRepoV"></td></tr>
+    </table>
+    <p id="acercaCopy" class="acerca-copy"></p>
+    <p id="acercaModelos" class="acerca-copy"></p>
+    <button id="acercaCerrar" type="button" class="acerca-cerrar"></button>
+  </div>
+</div>
 <div class="col">
 <div id="avisos"><div id="avisosTxt"></div><div id="avisoClave"></div></div>
 <main><div id="mensajes" role="log" aria-live="polite"></div></main>
@@ -153,6 +187,7 @@
 const $ = (id) => document.getElementById(id);
 const TXT = {
   en: {
+    aboutTitle: "About quipullm", aboutVersion: "Version {v}", aboutDesc: "Self-hosted LLM server, compatible with the OpenAI API, with a from-scratch WebGPU engine that runs in a browser window.", aboutAuthor: "Author", aboutContrib: "Contributions", aboutContribV: "Claude (Anthropic) assisted with the code and docs", aboutLicense: "License", aboutLicenseV: "Apache-2.0 (open source)", aboutRepo: "Repository", aboutCopy: "Copyright 2026 Diego Guevara B. Licensed under the Apache License, Version 2.0. Built on ideas and file formats from llama.cpp and GGUF.", aboutModels: "Models are not part of quipullm: each one keeps its own license.", close: "Close",
     title: "What can I help with?", sub: "This runs on the graphics card of the server PC. Your chats are saved only in this browser (not on the server).",
     chats: "Chats", noChats: "No saved chats yet.", rename: "Rename", renamePrompt: "New name for this chat:", del: "Delete", delConfirm: "Delete this chat?", delAll: "Delete all chats", delAllConfirm: "Delete ALL saved chats in this browser? This cannot be undone.", exportBtn: "Export", importBtn: "Import", saved: "Saved only in this browser.", noSave: "This browser does not allow saving chats (private mode?). Chats will be lost when you close the page.", keep: "Auto-delete:", keepNever: "Never", keep30: "After 30 days", keep90: "After 90 days", imported: "Imported {n} chat(s).", importBad: "That file is not a valid chats export.", untitled: "New conversation",
     send: "Send", stop: "Stop", newChat: "New chat", panel: "Panel", placeholder: "Write a message… (Enter to send, Shift+Enter for a new line)",
@@ -166,6 +201,7 @@ const TXT = {
     sug1: "Explain what a database is in 3 sentences", sug2: "Write a short, polite email asking to move a meeting", sug3: "Give me 5 ideas for a school science project"
   },
   es: {
+    aboutTitle: "Acerca de quipullm", aboutVersion: "Versión {v}", aboutDesc: "Servidor LLM autoalojado, compatible con la API de OpenAI, con un motor WebGPU escrito desde cero que corre en una ventana del navegador.", aboutAuthor: "Autor", aboutContrib: "Contribuciones", aboutContribV: "Claude (Anthropic) ayudó con el código y la documentación", aboutLicense: "Licencia", aboutLicenseV: "Apache-2.0 (código abierto)", aboutRepo: "Repositorio", aboutCopy: "Copyright 2026 Diego Guevara B. Licenciado bajo la Licencia Apache, Versión 2.0. Construido sobre ideas y formatos de llama.cpp y GGUF.", aboutModels: "Los modelos no forman parte de quipullm: cada uno conserva su propia licencia.", close: "Cerrar",
     title: "¿En qué puedo ayudarte?", sub: "Esto corre en la tarjeta gráfica de la PC servidora. Tus chats se guardan solo en este navegador (no en el servidor).",
     chats: "Chats", noChats: "Aún no hay chats guardados.", rename: "Renombrar", renamePrompt: "Nuevo nombre para este chat:", del: "Borrar", delConfirm: "¿Borrar este chat?", delAll: "Borrar todos los chats", delAllConfirm: "¿Borrar TODOS los chats guardados en este navegador? No se puede deshacer.", exportBtn: "Exportar", importBtn: "Importar", saved: "Guardados solo en este navegador.", noSave: "Este navegador no permite guardar chats (¿modo privado?). Se perderán al cerrar la página.", keep: "Borrado automático:", keepNever: "Nunca", keep30: "A los 30 días", keep90: "A los 90 días", imported: "Se importaron {n} chat(s).", importBad: "Ese archivo no es una exportación de chats válida.", untitled: "Conversación nueva",
     send: "Enviar", stop: "Parar", newChat: "Nuevo chat", panel: "Panel", placeholder: "Escribe un mensaje… (Enter envía, Shift+Enter hace salto de línea)",
@@ -185,11 +221,20 @@ const t = (k, v) => { let s = (TXT[LANG][k] ?? TXT.en[k] ?? k); if (v) for (cons
 const CLAVE = { get() { try { return localStorage.getItem("llm_clave") || ""; } catch { return ""; } }, set(v) { try { localStorage.setItem("llm_clave", v); } catch {} } };
 const cab = (extra = {}) => Object.assign({}, extra, CLAVE.get() ? { Authorization: "Bearer " + CLAVE.get() } : {});
 
+let VERSION_SRV = "";
 let historial = [];          // {role, content}
 let chatId = null;           // id of the saved chat that is open (null = not saved yet)
 let ctxUsado = 0, ctxMax = 0;      // tokens the conversation used in the last answer / context size of the selected model
 let control = null, ocupado = false, requiereClave = false, claveValida = true, sesion = 0;
 
+function acercaTextos() {
+  $("acercaTitulo").textContent = t("aboutTitle"); $("acercaVer").textContent = t("aboutVersion", { v: VERSION_SRV || "?" });
+  $("acercaDesc").textContent = t("aboutDesc"); $("acAutorK").textContent = t("aboutAuthor"); $("acAutorV").textContent = "Diego Guevara B.";
+  $("acContrK").textContent = t("aboutContrib"); $("acContrV").textContent = t("aboutContribV"); $("acLicK").textContent = t("aboutLicense"); $("acLicV").textContent = t("aboutLicenseV");
+  $("acRepoK").textContent = t("aboutRepo"); $("acRepoV").textContent = "github.com/dagoalguez/quipullm";
+  $("acercaCopy").textContent = t("aboutCopy"); $("acercaModelos").textContent = t("aboutModels"); $("acercaCerrar").textContent = t("close"); $("acercaX").setAttribute("aria-label", t("close"));
+  const b = $("acerca"); if (b) b.textContent = "quipullm v" + (VERSION_SRV || "?") + " \u00b7 Diego Guevara B. \u00b7 Apache-2.0";
+}
 function textos() {
   document.documentElement.lang = LANG; $("lang").value = LANG;
   $("enviar").textContent = t("send"); $("parar").textContent = t("stop"); $("nuevo").textContent = t("newChat"); $("aPanel").textContent = t("panel");
@@ -199,6 +244,7 @@ function textos() {
   $("latNuevo").textContent = "+ " + t("newChat"); $("latGuardado").textContent = t("saved"); $("latRetLbl").textContent = t("keep") + " ";
   const op = $("retencion").options; op[0].textContent = t("keepNever"); op[1].textContent = t("keep30"); op[2].textContent = t("keep90");
   $("exportar").textContent = t("exportBtn"); $("importar").textContent = t("importBtn"); $("borrarTodo").textContent = t("delAll"); $("lat").title = t("chats");
+  acercaTextos();
   pintarLista();
   if (!historial.length) vacio();
 }
@@ -297,11 +343,12 @@ async function estado() {
   try { st = await (await fetch("/api/status")).json(); }
   catch { const e = $("estado"); e.className = "insignia mal"; e.textContent = t("down"); return null; }
   requiereClave = !!st.requires_key;
+  if (st.version && st.version !== VERSION_SRV) { VERSION_SRV = st.version; acercaTextos(); }
   const e = $("estado"), conectado = st.engine.connected;
   e.className = "insignia " + (conectado ? "ok" : "mal");
   e.textContent = conectado ? (st.current_job ? t("working") : t("ready")) : t("off");
   const sel = $("modelo"), previo = sel.value;
-  const todos = st.models.filter((x) => x.supported && !x.embedding);
+  const todos = st.models.filter((x) => x.supported && !x.embedding && !x.decision);
   let lista = todos;
   const orden = st.chat_models || [];
   if (orden.length) {            // the owner chose which models appear here, and in which order
@@ -555,6 +602,15 @@ function limpiar(c) {          // validate an imported chat: only plain text, bo
 $("lat").onclick = () => { $("lateral").hidden = !$("lateral").hidden; try { localStorage.setItem("quipullm_lateral", $("lateral").hidden ? "0" : "1"); } catch {} };
 $("latNuevo").onclick = () => { $("nuevo").click(); if (innerWidth <= 760) $("lateral").hidden = true; };
 $("retencion").onchange = async () => { try { localStorage.setItem("quipullm_retencion", $("retencion").value); } catch {} await podar(); pintarLista(); };
+// ---- About dialog (DOM text only) ----
+function acercaAbrir() {
+  acercaTextos(); $("acercaFondo").hidden = false; $("acercaCerrar").focus();
+}
+function acercaCerrar() { $("acercaFondo").hidden = true; const b = $("acerca"); if (b && b.offsetParent) b.focus(); }
+$("acerca").onclick = acercaAbrir;
+$("acercaX").onclick = $("acercaCerrar").onclick = acercaCerrar;
+$("acercaFondo").onclick = (e) => { if (e.target === $("acercaFondo")) acercaCerrar(); };
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("acercaFondo").hidden) acercaCerrar(); });
 $("borrarTodo").onclick = async () => { if (!lista.length || !confirm(t("delAllConfirm"))) return; await BD.vaciar(); lista = []; $("nuevo").click(); };
 $("exportar").onclick = () => {
   const blob = new Blob([JSON.stringify({ app: "quipullm", version: 1, chats: ordenada() })], { type: "application/json" });

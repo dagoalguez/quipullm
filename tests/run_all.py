@@ -75,6 +75,7 @@ def main():
         if generar("gen_transformer.py", "referencias_tf.json") and generar("gen_gemma.py", "referencias_gemma.json"):
             res["transformer (qwen2/qwen3/llama/granite/gemma3)"] = correr("transformer", ["test_transformer.py"] + solo)
         if not solo:
+            res["decisión d1 (/v1/systemone) vs llama.cpp"] = correr("decisión d1", ["test_d1.py"])
             if generar("gen_bert.py", "referencias_bert.json"):
                 res["embeddings (nomic-bert)"] = correr("bert", ["test_bert.py"])
             if generar("gen_ds.py", "referencias_ds.json"):

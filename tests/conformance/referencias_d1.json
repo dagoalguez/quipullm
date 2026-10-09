@@ -1,0 +1,421 @@
+{
+ "llama_cpp": "8a1a9b5",
+ "sha256_modelo": "df2522ec837be6f0d3f676fd407d22aa4e314aa7f1228f195a5679898915968d",
+ "pedidos": {
+  "choice_basico": {
+   "state": "El cliente dice: me cobraron dos veces el pedido de la semana pasada.",
+   "questions": {
+    "ruta": {
+     "type": "choice",
+     "instructions": "Que equipo lo atiende?",
+     "criteria": {
+      "billing": null,
+      "shipping": null,
+      "tech_support": "problemas tecnicos"
+     }
+    }
+   }
+  },
+  "choice_letras": {
+   "state": "texto corto",
+   "questions": {
+    "q": {
+     "type": "choice",
+     "instructions": "Elige.",
+     "criteria": {
+      "A": "primera",
+      "B": "segunda",
+      "C": null
+     }
+    }
+   }
+  },
+  "noul_simple": {
+   "state": "El servidor responde en el puerto 1234.",
+   "questions": {
+    "q": {
+     "type": "noul",
+     "instructions": "Es una frase sobre redes?"
+    }
+   }
+  },
+  "noul_criterios": {
+   "state": "Hola",
+   "questions": {
+    "q": {
+     "type": "noul",
+     "instructions": "Esta enojado?",
+     "criteria": {
+      "true": "usa mayusculas o insultos"
+     }
+    }
+   }
+  },
+  "score": {
+   "state": "La base de datos guarda la informacion.",
+   "questions": {
+    "q": {
+     "type": "score",
+     "instructions": "Que tan urgente es?",
+     "criteria": [
+      "puede esperar",
+      "esta semana",
+      "hoy",
+      "ahora mismo"
+     ]
+    }
+   }
+  },
+  "score_no_texto": {
+   "state": "x",
+   "questions": {
+    "q": {
+     "type": "score",
+     "instructions": "Nota",
+     "criteria": [
+      {
+       "min": 0
+      },
+      [
+       1,
+       2.5
+      ],
+      null
+     ]
+    }
+   }
+  },
+  "estado_objeto": {
+   "state": {
+    "cliente": "Ñandú Pérez",
+    "total": 12.5,
+    "items": [
+     1,
+     2,
+     {
+      "a": "b\"c"
+     }
+    ],
+    "vacio": {},
+    "lista": [],
+    "ok": true,
+    "nada": null,
+    "nota": "línea1\nlínea2\t!"
+   },
+   "questions": {
+    "q": {
+     "type": "noul",
+     "instructions": {
+      "pregunta": "es grande?"
+     }
+    }
+   }
+  },
+  "estado_nulo": {
+   "state": null,
+   "questions": {
+    "q": {
+     "type": "noul",
+     "instructions": "Hay algo?"
+    }
+   }
+  },
+  "choice_30": {
+   "state": "muchas opciones",
+   "questions": {
+    "q": {
+     "type": "choice",
+     "instructions": "Cual?",
+     "criteria": {
+      "opcion_0": null,
+      "opcion_1": "descripcion 1",
+      "opcion_2": "descripcion 2",
+      "opcion_3": null,
+      "opcion_4": "descripcion 4",
+      "opcion_5": "descripcion 5",
+      "opcion_6": null,
+      "opcion_7": "descripcion 7",
+      "opcion_8": "descripcion 8",
+      "opcion_9": null,
+      "opcion_10": "descripcion 10",
+      "opcion_11": "descripcion 11",
+      "opcion_12": null,
+      "opcion_13": "descripcion 13",
+      "opcion_14": "descripcion 14",
+      "opcion_15": null,
+      "opcion_16": "descripcion 16",
+      "opcion_17": "descripcion 17",
+      "opcion_18": null,
+      "opcion_19": "descripcion 19",
+      "opcion_20": "descripcion 20",
+      "opcion_21": null,
+      "opcion_22": "descripcion 22",
+      "opcion_23": "descripcion 23",
+      "opcion_24": null,
+      "opcion_25": "descripcion 25",
+      "opcion_26": "descripcion 26",
+      "opcion_27": null,
+      "opcion_28": "descripcion 28",
+      "opcion_29": "descripcion 29"
+     }
+    }
+   }
+  },
+  "varias": {
+   "state": "El cliente pide un reembolso hoy mismo.",
+   "questions": {
+    "ruta": {
+     "type": "choice",
+     "instructions": "Equipo?",
+     "criteria": {
+      "ventas": null,
+      "soporte": "ayuda"
+     }
+    },
+    "enojado": {
+     "type": "noul",
+     "instructions": "Esta enojado?"
+    },
+    "urgencia": {
+     "type": "score",
+     "instructions": "Urgencia?",
+     "criteria": [
+      "baja",
+      "media",
+      "alta"
+     ]
+    }
+   }
+  }
+ },
+ "respuestas": {
+  "choice_basico": {
+   "model": "d1-test-f16",
+   "answers": {
+    "ruta": {
+     "type": "choice",
+     "choice": "billing",
+     "probabilities": {
+      "billing": 0.7755903976012093,
+      "shipping": 0.15160097808921708,
+      "tech_support": 0.07280862430957359
+     },
+     "confidence": 0.6633855964018139
+    }
+   },
+   "usage": {
+    "input_tokens": 158,
+    "output_tokens": 0
+   }
+  },
+  "choice_letras": {
+   "model": "d1-test-f16",
+   "answers": {
+    "q": {
+     "type": "choice",
+     "choice": "A",
+     "probabilities": {
+      "A": 0.7735350029509505,
+      "B": 0.15420986702324146,
+      "C": 0.0722551300258079
+     },
+     "confidence": 0.6603025044264257
+    }
+   },
+   "usage": {
+    "input_tokens": 91,
+    "output_tokens": 0
+   }
+  },
+  "noul_simple": {
+   "model": "d1-test-f16",
+   "answers": {
+    "q": {
+     "type": "noul",
+     "noul": 0.7970489300947833
+    }
+   },
+   "usage": {
+    "input_tokens": 72,
+    "output_tokens": 0
+   }
+  },
+  "noul_criterios": {
+   "model": "d1-test-f16",
+   "answers": {
+    "q": {
+     "type": "noul",
+     "noul": 0.8092988997353835
+    }
+   },
+   "usage": {
+    "input_tokens": 89,
+    "output_tokens": 0
+   }
+  },
+  "score": {
+   "model": "d1-test-f16",
+   "answers": {
+    "q": {
+     "type": "score",
+     "score": 1.4759205215150057,
+     "legend": {
+      "0": "puede esperar",
+      "1": "esta semana",
+      "2": "hoy",
+      "3": "ahora mismo"
+     },
+     "probabilities": {
+      "0": 0.34947159051111026,
+      "1": 0.1229790273751333,
+      "2": 0.22970665220139663,
+      "3": 0.2978427299123597
+     },
+     "confidence": 0.0
+    }
+   },
+   "usage": {
+    "input_tokens": 116,
+    "output_tokens": 0
+   }
+  },
+  "score_no_texto": {
+   "model": "d1-test-f16",
+   "answers": {
+    "q": {
+     "type": "score",
+     "score": 0.8914822505079162,
+     "legend": {
+      "0": {
+       "min": 0
+      },
+      "1": [
+       1,
+       2.5
+      ],
+      "2": null
+     },
+     "probabilities": {
+      "0": 0.46742813246269643,
+      "1": 0.17366148456669092,
+      "2": 0.3589103829706126
+     },
+     "confidence": 0.0
+    }
+   },
+   "usage": {
+    "input_tokens": 92,
+    "output_tokens": 0
+   }
+  },
+  "estado_objeto": {
+   "model": "d1-test-f16",
+   "answers": {
+    "q": {
+     "type": "noul",
+     "noul": 0.7986656157112462
+    }
+   },
+   "usage": {
+    "input_tokens": 244,
+    "output_tokens": 0
+   }
+  },
+  "estado_nulo": {
+   "model": "d1-test-f16",
+   "answers": {
+    "q": {
+     "type": "noul",
+     "noul": 0.8142941237206945
+    }
+   },
+   "usage": {
+    "input_tokens": 44,
+    "output_tokens": 0
+   }
+  },
+  "choice_30": {
+   "model": "d1-test-f16",
+   "answers": {
+    "q": {
+     "type": "choice",
+     "choice": "opcion_0",
+     "probabilities": {
+      "opcion_0": 0.13924352640749427,
+      "opcion_1": 0.02726727096518784,
+      "opcion_2": 0.013205879916759719,
+      "opcion_3": 0.05705106764614106,
+      "opcion_4": 0.029862777665577937,
+      "opcion_5": 0.018058911127467138,
+      "opcion_6": 0.008084113977506665,
+      "opcion_7": 0.027655061544481465,
+      "opcion_8": 0.02942169690020498,
+      "opcion_9": 0.08246124371445045,
+      "opcion_10": 0.008974916379178084,
+      "opcion_11": 0.014419960058261306,
+      "opcion_12": 0.05259821455215354,
+      "opcion_13": 0.08424679757706628,
+      "opcion_14": 0.019826420440227283,
+      "opcion_15": 0.026858589708058968,
+      "opcion_16": 0.014205015937249562,
+      "opcion_17": 0.027147762013500002,
+      "opcion_18": 0.004870403458753255,
+      "opcion_19": 0.013454468480512747,
+      "opcion_20": 0.048253395694260307,
+      "opcion_21": 0.02395710190110396,
+      "opcion_22": 0.0642176964749653,
+      "opcion_23": 0.007295718636200566,
+      "opcion_24": 0.007721660274582574,
+      "opcion_25": 0.010607572582545443,
+      "opcion_26": 0.028583547549936132,
+      "opcion_27": 0.01603046540911039,
+      "opcion_28": 0.06341358788394148,
+      "opcion_29": 0.0310051551231212
+     },
+     "confidence": 0.10956226869740787
+    }
+   },
+   "usage": {
+    "input_tokens": 424,
+    "output_tokens": 0
+   }
+  },
+  "varias": {
+   "model": "d1-test-f16",
+   "answers": {
+    "ruta": {
+     "type": "choice",
+     "choice": "ventas",
+     "probabilities": {
+      "ventas": 0.8345470926510363,
+      "soporte": 0.16545290734896356
+     },
+     "confidence": 0.6690941853020727
+    },
+    "enojado": {
+     "type": "noul",
+     "noul": 0.8121220562138103
+    },
+    "urgencia": {
+     "type": "score",
+     "score": 0.8498386427696522,
+     "legend": {
+      "0": "baja",
+      "1": "media",
+      "2": "alta"
+     },
+     "probabilities": {
+      "0": 0.485446597939157,
+      "1": 0.17926816135203358,
+      "2": 0.3352852407088093
+     },
+     "confidence": 0.0
+    }
+   },
+   "usage": {
+    "input_tokens": 309,
+    "output_tokens": 0
+   }
+  }
+ }
+}

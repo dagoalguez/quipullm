@@ -83,6 +83,10 @@ La única comparación con LM Studio viene de una máquina (Intel i7-1270P, Inte
 
 **Opciones:** (A) seguir fijado y documentado (actual); (B) seguir upstream (redimensionado bilineal estilo Pillow, sin `<|img_thumbnail|>` en imágenes LFM2 de una sola tesela, regla de teselado por área), regenerar las referencias y repetir la suite `--engine` completa; (C) soportar ambos comportamientos con un interruptor y dos juegos de referencias. Se decidiría después de medir la salida de modelos reales con ambos.
 
-## 9. No planeado para v4
+## 9. Modelos de decisión (Liquid d1): lo que falta
+
+**Hoy (Unreleased):** `POST /v1/systemone`, solo texto, comprobado contra llama.cpp con un modelo sintético. **Lo siguiente, en este orden:** (1) correr el d1-3B real y medirlo en el equipo probado (velocidad y respuestas; todavía no hay nada medido); (2) reutilizar el inicio común del prompt entre las preguntas de una petición (la caché de prompts ya existe para el chat); (3) imágenes, que necesitan el proyector de visión de d1 (no el de LFM2-VL, que es el que se soporta hoy); (4) d1-omni-600M (otra arquitectura, bidireccional: código nuevo en el motor).
+
+## 10. No planeado para v4
 
 Batching continuo, varios modelos cargados a la vez y modelos que requieren código nuevo en el núcleo (QKV fusionado, softcapping de atención, capas recurrentes/SSM, RoPE escalado). Son cambios grandes con alto riesgo de errores silenciosos. Las arquitecturas nuevas que encajan en las clases base existentes ya las pueden agregar los colaboradores ([docs/ARCH_GUIDE.md](docs/ARCH_GUIDE.md)).

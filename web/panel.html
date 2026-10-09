@@ -68,6 +68,23 @@
   #bannerCarga.indef .barra i { width:35%; animation:vaiven 1.2s ease-in-out infinite alternate; }
   @keyframes vaiven { from { margin-left:0 } to { margin-left:65% } }
   button.cargando { opacity:1; color:var(--acento); border-color:var(--acento); }
+  .acerca-fondo { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; padding:16px; }
+  .acerca-fondo[hidden] { display:none; }
+  .acerca { position:relative; background:var(--panel); color:var(--texto); border:1px solid var(--linea); border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.35); padding:26px 28px 22px; width:100%; max-width:480px; max-height:100%; overflow-y:auto; text-align:center; font-size:14px; line-height:1.5; }
+  .acerca-logo { color:var(--acento); }
+  .acerca h2 { margin:6px 0 2px; font-size:20px; text-transform:none; letter-spacing:0; color:var(--texto); }
+  .acerca-ver { color:var(--tenue); font-size:13px; margin-bottom:10px; }
+  .acerca p { margin:8px 0; }
+  .acerca-tabla { width:100%; border-collapse:collapse; margin:12px 0; text-align:left; }
+  .acerca-tabla th, .acerca-tabla td { padding:7px 10px; border-top:1px solid var(--linea); vertical-align:top; }
+  .acerca-tabla tr:last-child th, .acerca-tabla tr:last-child td { border-bottom:1px solid var(--linea); }
+  .acerca-tabla th { width:34%; color:var(--tenue); font-weight:600; }
+  .acerca-copy { color:var(--tenue); font-size:12.5px; }
+  .acerca-x { position:absolute; top:8px; right:12px; background:none; border:none; color:var(--tenue); font-size:24px; line-height:1; cursor:pointer; }
+  .acerca-cerrar { font-family:inherit; font-size:14px; margin-top:8px; padding:8px 26px; border-radius:10px; border:1px solid var(--acento); background:var(--acento); color:#fff; cursor:pointer; }
+  .pie-acerca { text-align:center; padding:14px 0 22px; }
+  .pie-acerca button { font-family:inherit; font-size:12.5px; background:none; border:none; color:var(--tenue); cursor:pointer; }
+  .pie-acerca button:hover { color:var(--acento); text-decoration:underline; }
 </style>
 </head>
 <body>
@@ -211,6 +228,25 @@
     <div id="logs"></div>
   </section>
 </main>
+<div class="pie-acerca"><button id="acerca" type="button"></button></div>
+<div id="acercaFondo" class="acerca-fondo" hidden>
+  <div class="acerca" role="dialog" aria-modal="true" aria-labelledby="acercaTitulo">
+    <button id="acercaX" type="button" class="acerca-x" aria-label="Close">&times;</button>
+    <svg class="acerca-logo" width="56" height="56" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M8 12h48"/><path d="M16 12v40M28 12v32M40 12v44M52 12v28"/><circle cx="16" cy="26" r="3.5" fill="currentColor"/><circle cx="16" cy="40" r="3.5" fill="currentColor"/><circle cx="28" cy="22" r="3.5" fill="currentColor"/><circle cx="40" cy="30" r="3.5" fill="currentColor"/><circle cx="40" cy="44" r="3.5" fill="currentColor"/><circle cx="52" cy="26" r="3.5" fill="currentColor"/></svg>
+    <h2 id="acercaTitulo"></h2>
+    <div id="acercaVer" class="acerca-ver"></div>
+    <p id="acercaDesc"></p>
+    <table class="acerca-tabla">
+      <tr><th id="acAutorK"></th><td id="acAutorV"></td></tr>
+      <tr><th id="acContrK"></th><td id="acContrV"></td></tr>
+      <tr><th id="acLicK"></th><td id="acLicV"></td></tr>
+      <tr><th id="acRepoK"></th><td id="acRepoV"></td></tr>
+    </table>
+    <p id="acercaCopy" class="acerca-copy"></p>
+    <p id="acercaModelos" class="acerca-copy"></p>
+    <button id="acercaCerrar" type="button" class="acerca-cerrar"></button>
+  </div>
+</div>
 <script>
 const $ = (id) => document.getElementById(id);
 const CLAVE = { get() { try { return localStorage.getItem("llm_clave") || ""; } catch { return ""; } }, set(v) { try { localStorage.setItem("llm_clave", v); } catch {} } };
@@ -229,6 +265,8 @@ function copiar(txt, btn) {
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const I18N = {
   en: {
+decisionTag: "decision", decisionTip: "Decision model: it does not chat, it answers typed questions through POST /v1/systemone.",
+aboutTitle: "About quipullm", aboutVersion: "Version {v}", aboutDesc: "Self-hosted LLM server, compatible with the OpenAI API, with a from-scratch WebGPU engine that runs in a browser window.", aboutAuthor: "Author", aboutContrib: "Contributions", aboutContribV: "Claude (Anthropic) assisted with the code and docs", aboutLicense: "License", aboutLicenseV: "Apache-2.0 (open source)", aboutRepo: "Repository", aboutCopy: "Copyright 2026 Diego Guevara B. Licensed under the Apache License, Version 2.0. Built on ideas and file formats from llama.cpp and GGUF.", aboutModels: "Models are not part of quipullm: each one keeps its own license.", aboutClose: "Close",
  "engineBadge": "engine: …",
  "badgeDown": "server is down",
  "badgeWorking": "engine: working",
@@ -380,6 +418,8 @@ const I18N = {
  "lang": "Language"
 },
   es: {
+decisionTag: "decisión", decisionTip: "Modelo de decisión: no conversa, responde preguntas tipadas por POST /v1/systemone.",
+aboutTitle: "Acerca de quipullm", aboutVersion: "Versión {v}", aboutDesc: "Servidor LLM autoalojado, compatible con la API de OpenAI, con un motor WebGPU escrito desde cero que corre en una ventana del navegador.", aboutAuthor: "Autor", aboutContrib: "Contribuciones", aboutContribV: "Claude (Anthropic) ayudó con el código y la documentación", aboutLicense: "Licencia", aboutLicenseV: "Apache-2.0 (código abierto)", aboutRepo: "Repositorio", aboutCopy: "Copyright 2026 Diego Guevara B. Licenciado bajo la Licencia Apache, Versión 2.0. Construido sobre ideas y formatos de llama.cpp y GGUF.", aboutModels: "Los modelos no forman parte de quipullm: cada uno conserva su propia licencia.", aboutClose: "Cerrar",
  "engineBadge": "motor: …",
  "badgeDown": "servidor apagado",
  "badgeWorking": "motor: trabajando",
@@ -541,6 +581,7 @@ function aplicarIdioma() {
   document.querySelectorAll("[data-ih]").forEach((e) => { e.innerHTML = t(e.dataset.ih); });
   document.querySelectorAll("[data-iph]").forEach((e) => { e.placeholder = t(e.dataset.iph); });
   $("lang").value = LANG;
+  if (typeof acercaTextos === "function") acercaTextos();
 }
 let ultimoModelos = "", REMOTO = false, cfgCargada = false, claveRechazada = false;
 const TXT_MEM = { fits: ["si", "memFits"], tight: ["aviso", "memTight"], no_fit: ["no", "memNoFit"], unknown: ["", "memUnknown"] };
@@ -552,11 +593,28 @@ function memoria(x) {
 }
 const PROXIMA = { qwen2: "v2", llama: "v2", granite: "v2", gemma3: "v3" };
 
+// ---- About dialog (text via textContent only) ----
+let VERSION_SRV = "";
+function acercaTextos() {
+  $("acercaTitulo").textContent = t("aboutTitle"); $("acercaVer").textContent = t("aboutVersion", { v: VERSION_SRV || "?" });
+  $("acercaDesc").textContent = t("aboutDesc"); $("acAutorK").textContent = t("aboutAuthor"); $("acAutorV").textContent = "Diego Guevara B.";
+  $("acContrK").textContent = t("aboutContrib"); $("acContrV").textContent = t("aboutContribV"); $("acLicK").textContent = t("aboutLicense"); $("acLicV").textContent = t("aboutLicenseV");
+  $("acRepoK").textContent = t("aboutRepo"); $("acRepoV").textContent = "github.com/dagoalguez/quipullm";
+  $("acercaCopy").textContent = t("aboutCopy"); $("acercaModelos").textContent = t("aboutModels"); $("acercaCerrar").textContent = t("aboutClose"); $("acercaX").setAttribute("aria-label", t("aboutClose"));
+  $("acerca").textContent = "quipullm v" + (VERSION_SRV || "?") + " \u00b7 Diego Guevara B. \u00b7 Apache-2.0";
+}
+function acercaCerrar() { $("acercaFondo").hidden = true; $("acerca").focus(); }
+$("acerca").onclick = () => { acercaTextos(); $("acercaFondo").hidden = false; $("acercaCerrar").focus(); };
+$("acercaX").onclick = $("acercaCerrar").onclick = acercaCerrar;
+$("acercaFondo").onclick = (e) => { if (e.target === $("acercaFondo")) acercaCerrar(); };
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("acercaFondo").hidden) acercaCerrar(); });
+
 async function refrescar() {
   let st;
   try { st = await (await fetch("/api/status")).json(); }
   catch { $("insMotor").className = "insignia mal"; $("insMotor").textContent = t("badgeDown"); return; }
   $("version").textContent = "v" + st.version;
+  if (st.version !== VERSION_SRV) { VERSION_SRV = st.version; acercaTextos(); }
   REMOTO = !st.from_server_pc;
   $("filaClave").style.display = st.requires_key && (!CLAVE.get() || claveRechazada) ? "flex" : "none";
   document.querySelectorAll("#nPc, .nPc").forEach((e) => { e.textContent = st.pc_name || t("serverPc"); });
@@ -615,7 +673,7 @@ async function refrescar() {
         : `<span class="etq no">${x.embedding ? t("embeddings") : ""}${PROXIMA[x.arch] || t("unsupported")}</span>`;
       return `<tr class="${m.loaded_model === x.id ? "cargado" : ""}">
         <td class="mono" title="${esc(t("alsoAnswers") + x.match_keys.join(", "))}">${esc(x.id)}${x.vision_ok ? `<span class="etq si">${t("vision")}</span>` : (x.vision ? `<span class="etq no" title="${esc(t("visionBadTip"))}">${t("visionBad")}</span>` : "")}<div class="tenue" style="font-size:12px">${esc(x.file)}</div></td>
-        <td>${esc(x.arch)} ${est}</td><td class="mono">${esc(x.quantization)}</td><td class="mono">${x.gb} GB</td><td>${memoria(x)}</td><td class="mono">${x.ctx}</td><td class="celdachat">${celdaChat(x, st)}</td>
+        <td>${esc(x.arch)} ${est}${x.decision ? ` <span class="etq si" title="${esc(t("decisionTip"))}">${esc(t("decisionTag"))}</span>` : ""}</td><td class="mono">${esc(x.quantization)}</td><td class="mono">${x.gb} GB</td><td>${memoria(x)}</td><td class="mono">${x.ctx}</td><td class="celdachat">${celdaChat(x, st)}</td>
         <td>${x.supported ? `<button data-cargar="${esc(x.id)}" onclick="cargar('${esc(x.id)}')"${m.loaded_model === x.id ? " disabled" : ""}>${esc(t(m.loaded_model === x.id ? "loadedBtn" : "load"))}</button>` : ""}</td></tr>`;
     }).join("") || `<tr><td colspan="8" class="tenue">${t("noModels")}</td></tr>`;
     renderGen(st);
@@ -636,7 +694,7 @@ async function refrescarLogs() {
 
 let ULTIMO_ST = null;
 function renderGen(st) {
-  const aptos = st.models.filter((x) => x.supported && !x.embedding);
+  const aptos = st.models.filter((x) => x.supported && !x.embedding && !x.decision);
   const tg = $("cTemp").value, mt = $("cMaxTok").value || "0", lim = $("cMaxLim").value || "0";
   const val = (x, k) => (x.overrides && x.overrides[k] != null ? x.overrides[k] : "");
   const inp = (x, k, ph, step) => `<input type="number" min="0" step="${step}" data-id="${esc(x.id)}" data-k="${k}" value="${esc(val(x, k))}" placeholder="${esc(ph)}" ${REMOTO ? "disabled" : ""} style="width:110px">`;
@@ -651,14 +709,14 @@ $("btnGuardarGen").onclick = async () => {
   $("genMsg").textContent = r.ok ? t("genSaved") : j.error.message; $("genMsg").className = r.ok ? "ok" : "mal";
   ultimoModelos = ""; refrescar();
 };
-const aptosChat = (st) => st.models.filter((x) => x.supported && !x.embedding).map((x) => x.id);
+const aptosChat = (st) => st.models.filter((x) => x.supported && !x.embedding && !x.decision).map((x) => x.id);
 function chatEfectivos(st) {
   const todos = aptosChat(st);
   const f = st.chat_models && st.chat_models.length ? st.chat_models.filter((id) => todos.includes(id)) : [];
   return f.length ? f : todos;
 }
 function celdaChat(x, st) {
-  if (!x.supported || x.embedding) return '<span class="tenue">—</span>';
+  if (!x.supported || x.embedding || x.decision) return '<span class="tenue">—</span>';
   const ef = chatEfectivos(st), pos = ef.indexOf(x.id), dis = REMOTO ? "disabled" : "";
   const flechas = pos < 0 ? "" : ` <button ${dis} data-id="${esc(x.id)}" onclick="chatMover(this.dataset.id,-1)" ${pos === 0 ? "disabled" : ""}>↑</button><button ${dis} data-id="${esc(x.id)}" onclick="chatMover(this.dataset.id,1)" ${pos === ef.length - 1 ? "disabled" : ""}>↓</button>`
     + (pos === 0 ? ` <span class="etq si">${esc(t("chatDefault"))}</span>` : "");

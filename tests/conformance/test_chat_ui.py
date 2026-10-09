@@ -7,7 +7,7 @@ AQUI=os.path.dirname(os.path.abspath(__file__))
 RAIZ=os.path.dirname(os.path.dirname(AQUI))
 TMP=tempfile.mkdtemp()
 HTML=open(os.path.join(RAIZ,"web","chat.html"),encoding="utf-8").read()
-ST={"requires_key":False,"engine":{"connected":True,"loaded_model":"m"},"current_job":None,"queued":0,"panel_allowed":True,"models":[{"id":"m","supported":True,"embedding":False,"ctx":8192}],"chat_models":[]}
+ST={"requires_key":False,"engine":{"connected":True,"loaded_model":"m"},"current_job":None,"queued":0,"panel_allowed":True,"models":[{"id":"m","supported":True,"embedding":False,"ctx":8192},{"id":"d1","supported":True,"embedding":False,"decision":True,"ctx":8192}],"chat_models":[]}
 sent=[]; res=[]; claves=[]
 def chk(n,c,x=""): res.append(bool(c)); print(("OK   " if c else "FALLA"),n,("" if c else x))
 async def main():
@@ -28,6 +28,7 @@ async def main():
                 return await r.fulfill(body=body,content_type="text/event-stream")
             await r.fulfill(status=404,body="")
         await pg.route("http://t.test/**",h); await pg.goto("http://t.test/chat"); await pg.wait_for_timeout(500)
+        chk("un modelo de decisión (d1) no aparece en el selector del chat", await pg.evaluate("[...document.querySelectorAll('#modelo option')].map(o=>o.value)")==["m"])
         chk("lateral abierto en pantalla ancha", await pg.locator("#lateral").is_visible())
         chk("lista vacía muestra aviso", await pg.locator(".sinchats").count()==1)
         async def decir(x):
@@ -123,5 +124,43 @@ async def panel_fijo():
         chk("panel: encabezado y banner de carga siguen arriba al desplazar", await pg.evaluate("scrollY")>1000 and top[0]==0 and 0<top[1]<120, top)
         await b.close()
 asyncio.run(panel_fijo())
+async def acerca():
+    from playwright.async_api import async_playwright as ap
+    CHAT=open(os.path.join(RAIZ,"web","chat.html"),encoding="utf-8").read()
+    PANEL=open(os.path.join(RAIZ,"web","panel.html"),encoding="utf-8").read()
+    st=dict(ST, version="9.9.9", from_server_pc=True, stats={"requests":0,"tokens_generated":0,"errors":0}, reachable_at=["http://localhost:1"], port=1)
+    import json as _j
+    async with ap() as p:
+        b=await p.chromium.launch(); ctx=await b.new_context(viewport={"width":1100,"height":700})
+        for nombre,html,ruta,boton in (("chat",CHAT,"/chat","#lat"),("panel",PANEL,"/",None)):
+            pg=await ctx.new_page(); errs=[]; pg.on("pageerror",lambda e:errs.append(str(e)))
+            def mk(html,ruta):
+              async def h(r):
+                u=r.request.url
+                if u.endswith("/api/status"): return await r.fulfill(body=_j.dumps(st),content_type="application/json")
+                if u.rstrip("/").endswith(ruta.rstrip("/")) and "/api/" not in u: return await r.fulfill(body=html,content_type="text/html")
+                await r.fulfill(status=404,body="{}",content_type="application/json")
+              return h
+            await pg.route("http://t.test/**",mk(html,ruta)); await pg.goto("http://t.test"+ruta); await pg.wait_for_timeout(700)
+            if boton:
+                if not await pg.locator("#lateral").is_visible(): await pg.click(boton)
+            chk(nombre+": Acerca de oculto al cargar", not await pg.locator("#acercaFondo").is_visible())
+            txt=await pg.inner_text("#acerca")
+            chk(nombre+": el pie muestra version, autor y licencia", "v9.9.9" in txt and "Diego Guevara B." in txt and "Apache-2.0" in txt, txt)
+            await pg.click("#acerca")
+            chk(nombre+": el pie abre el dialogo", await pg.locator("#acercaFondo").is_visible())
+            d=await pg.inner_text(".acerca")
+            chk(nombre+": dialogo con version, autor, Claude y Apache-2.0", all(x in d for x in ("9.9.9","Diego Guevara B.","Claude","Apache-2.0","quipullm")), d)
+            chk(nombre+": el dialogo no enlaza a internet", await pg.locator(".acerca a").count()==0)
+            await pg.keyboard.press("Escape"); chk(nombre+": Esc lo cierra", not await pg.locator("#acercaFondo").is_visible())
+            await pg.click("#acerca"); await pg.click("#acercaCerrar"); chk(nombre+": boton Cerrar", not await pg.locator("#acercaFondo").is_visible())
+            await pg.click("#acerca"); await pg.mouse.click(5,5); chk(nombre+": clic fuera lo cierra", not await pg.locator("#acercaFondo").is_visible())
+            await pg.select_option("#lang","es"); await pg.wait_for_timeout(300); await pg.click("#acerca")
+            chk(nombre+": en espanol", "Acerca de" in await pg.inner_text("#acercaTitulo") and "Cerrar" in await pg.inner_text("#acercaCerrar"))
+            if nombre=="chat": await pg.screenshot(path=os.path.join(os.environ.get("TMPDIR","/tmp"),"acerca-chat.png"))
+            errs=[e for e in errs if not (nombre=="panel" and "undefined (reading" in e)]  # the panel mock status is partial
+            chk(nombre+": sin errores de JS", not errs, errs)
+        await b.close()
+asyncio.run(acerca())
 print("TOTAL", sum(res), "OK,", len(res)-sum(res), "fallas")
 import sys; sys.exit(1 if not all(res) else 0)

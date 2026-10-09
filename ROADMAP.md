@@ -83,6 +83,10 @@ The only LM Studio comparison comes from one machine (Intel i7-1270P, Intel UHD,
 
 **Options:** (A) stay pinned and documented (current); (B) follow upstream (Pillow-style bilinear resize, no `<|img_thumbnail|>` for single-tile LFM2 images, area-based tiling rule), regenerate the references and re-run the full `--engine` suite; (C) support both behaviours behind a switch and keep two reference sets. We would decide after measuring real-model output with both.
 
-## 9. Not planned for v4
+## 9. Decision models (Liquid d1): what is left
+
+**Today (Unreleased):** `POST /v1/systemone`, text only, checked against llama.cpp with a synthetic model. **Next, in this order:** (1) run the real d1-3B and measure it on the tested machine (speed and answers, nothing is measured yet); (2) reuse the shared start of the prompt between the questions of one request (the prompt cache already exists for chat); (3) images, which need the d1 vision projector (not the LFM2-VL one that is supported today); (4) d1-omni-600M (a different, bidirectional architecture: new engine code).
+
+## 10. Not planned for v4
 
 Continuous batching, several models loaded at once, and models that need new core code (fused QKV, attention softcapping, recurrent/SSM layers, scaled RoPE). They are large changes with a high risk of silent errors. New architectures that fit the existing base classes can already be added by contributors ([docs/ARCH_GUIDE.md](docs/ARCH_GUIDE.md)).

@@ -24,6 +24,7 @@ import base64
 import json
 import logging
 import logging.handlers
+import math
 import os
 import queue
 import re
@@ -631,6 +632,7 @@ class Registro:
                     "cuantizacion": FILE_TYPES.get(kv.get("general.file_type"), _cuant_de_nombre(stem)),
                     "ctx_modelo": ctx_modelo, "soportado": arch in ARQUITECTURAS_SOPORTADAS,
                     "embedding": "embed" in stem.lower() or bool((manifiesto_de(arch) or {}).get("embedding")),
+                    "decision": kv.get(arch + ".decision.type") in DECISION_SOPORTADA,
                     "vision": vision, "mmproj": mmproj, "vision_ok": vision_ok, "publisher": carpeta_modelo.split("/")[0] if carpeta_modelo else "",
                     "n_tensores": len(tens),
                 })
@@ -828,7 +830,7 @@ class Registro:
     def publico(self, m):
         return {"id": m["id"], "arch": m["arch"], "name": m["nombre"], "file": m["relativo"],
                 "gb": round(m["bytes"] / 1e9, 2), "quantization": m["cuantizacion"],
-                "supported": m["soportado"], "embedding": m["embedding"], "vision": m["vision"], "vision_ok": m["vision_ok"],
+                "supported": m["soportado"], "embedding": m["embedding"], "decision": m["decision"], "vision": m["vision"], "vision_ok": m["vision_ok"],
                 "match_keys": sorted(m["claves"]), "ctx": self.ctx_para(m), "memory": self._memoria_publica(m),
                 "gen": ajustes_generacion(self.cfg, m),
                 "overrides": {k: v for k, v in ((self.cfg.get("model_overrides") or {}).get(m["id"]) or {}).items() if k in OVERRIDES_MODELO}}
@@ -1345,6 +1347,156 @@ class SeparadorRazonamiento:
 # =====================================================================
 #  Job queue and bridge to the engine
 # =====================================================================
+# =====================================================================
+#  Decision models (Liquid AI d1): POST /v1/systemone
+#  Typed questions answered in one forward pass. Follows llama.cpp (tools/server/server-decision.cpp, type lfm2-d1).
+#  Here: parsing, the text of the JSON values and the probabilities. The engine builds the prompt and reads the logits.
+# =====================================================================
+DECISION_SOPORTADA = ("lfm2-d1",)      # value of <arch>.decision.type that this version can run
+DECISION_MAX_OPCIONES = 255
+DECISION_MAX_PREGUNTAS = 64
+
+
+def _tojson(v, indent=-1, nivel=0):
+    """JSON text as the jinja `tojson` of llama.cpp writes it: ', ' and ': ' without indent, ',' with it, characters kept
+    as they are (no \\u escapes beyond control characters) and floats printed like C++ `oss << double` (%g)."""
+    if v is None:
+        return "null"
+    if v is True:
+        return "true"
+    if v is False:
+        return "false"
+    if isinstance(v, int):
+        return str(v)
+    if isinstance(v, float):
+        return "%g" % v
+    if isinstance(v, str):
+        out = ['"']
+        for c in v:
+            if c == '"': out.append('\\"')
+            elif c == "\\": out.append("\\\\")
+            elif c == "\b": out.append("\\b")
+            elif c == "\f": out.append("\\f")
+            elif c == "\n": out.append("\\n")
+            elif c == "\r": out.append("\\r")
+            elif c == "\t": out.append("\\t")
+            elif ord(c) < 0x20: out.append("\\u%04x" % ord(c))
+            else: out.append(c)
+        out.append('"')
+        return "".join(out)
+    sep = "," if indent >= 0 else ", "
+    nl = "\n" if indent >= 0 else ""
+    sangria = lambda n: " " * (n * indent) if indent > 0 else ""
+    if isinstance(v, (list, tuple)):
+        if not v:
+            return "[]"
+        partes = [sangria(nivel) + (" " * indent if indent > 0 else "") + _tojson(x, indent, nivel + 1) for x in v]
+        return "[" + nl + (sep + nl).join(partes) + nl + sangria(nivel) + "]"
+    if isinstance(v, dict):
+        if not v:
+            return "{}"
+        partes = [sangria(nivel) + (" " * indent if indent > 0 else "") + _tojson(str(k), indent, nivel + 1) + ": " +
+                  _tojson(x, indent, nivel + 1) for k, x in v.items()]
+        return "{" + nl + (sep + nl).join(partes) + nl + sangria(nivel) + "}"
+    return "null"
+
+
+def _texto_o_json(v):
+    """jinja: `v if v is string else v | tojson`."""
+    return v if isinstance(v, str) else _tojson(v)
+
+
+def _hay_medios(v):
+    """True if the value has an image or audio part (chat message format): not supported by this version."""
+    if isinstance(v, dict):
+        if v.get("type") in ("image_url", "input_audio"):
+            return True
+        return any(_hay_medios(x) for x in v.values())
+    if isinstance(v, list):
+        return any(_hay_medios(x) for x in v)
+    return False
+
+
+def decision_preparar(d):
+    """Validates the body of /v1/systemone. Returns the list of questions, each the dict that goes to the engine: id, tipo, estado, instrucciones, opciones[{key, desc, es_nulo, verdad}] (options in model order).
+    Raises ErrorAPI 400 for a bad request and 501 for what is not supported (images, audio, videos)."""
+    if not isinstance(d, dict) or "state" not in d:
+        raise ErrorAPI(400, '"state" must be provided')
+    for campo in ("files", "images", "videos"):
+        if d.get(campo):
+            raise ErrorAPI(501, "Image, audio and video input is not supported by this version of the engine yet "
+                                "(\"%s\"): only text decisions." % campo, "not_implemented")
+    estado = d["state"]
+    if _hay_medios(estado):
+        raise ErrorAPI(501, "Image and audio parts in the state are not supported by this version of the engine yet: "
+                            "only text decisions.", "not_implemented")
+    estado_txt = None if estado is None else (estado if isinstance(estado, str) else _tojson(estado, 2))
+    qs = d.get("questions")
+    if not isinstance(qs, dict) or not qs:
+        raise ErrorAPI(400, '"questions" must be a non-empty object')
+    if len(qs) > DECISION_MAX_PREGUNTAS:
+        raise ErrorAPI(400, '"questions" has %d questions, the maximum is %d' % (len(qs), DECISION_MAX_PREGUNTAS))
+    salida = []
+    for qid, q in qs.items():
+        def mal(msg, qid=qid):
+            return ErrorAPI(400, "questions.%s: %s" % (qid, msg))
+        if not isinstance(q, dict):
+            raise mal("must be an object")
+        if q.get("instructions") is None:
+            raise mal('"instructions" must be provided')
+        tipo = q.get("type")
+        crit = q.get("criteria")
+        if tipo == "choice":
+            if not isinstance(crit, dict) or not crit:
+                raise mal('"criteria" must be a non-empty object')
+            ops = [(k, v) for k, v in crit.items()]
+        elif tipo == "score":
+            if not isinstance(crit, list) or not 2 <= len(crit) <= 10:
+                raise mal('"criteria" must be an array of 2 to 10 levels')
+            ops = [(str(i), v) for i, v in enumerate(crit)]
+        elif tipo == "noul":
+            if crit is not None and not isinstance(crit, dict):
+                raise mal('"criteria" must be an object')
+            ops = [("true", (crit or {}).get("true")), ("false", (crit or {}).get("false"))]   # d1 reads "true" first
+        else:
+            raise mal('"type" must be one of: choice, score, noul')
+        if len(ops) > DECISION_MAX_OPCIONES:
+            raise mal("too many options (%d), this model supports at most %d" % (len(ops), DECISION_MAX_OPCIONES))
+        salida.append({
+            "id": qid, "tipo": tipo, "estado": estado_txt, "instrucciones": _texto_o_json(q["instructions"]),
+            "opciones": [{"key": k, "desc": _texto_o_json(v), "es_nulo": v is None, "verdad": bool(v), "crudo": v} for k, v in ops],
+        })
+    return salida
+
+
+def decision_respuesta(q, puntajes):
+    """Answer of one question from the engine's scores (one per option, in the order of q["opciones"]):
+    softmax (the d1 files carry no temperature, so 1.0), as llama.cpp's format_answer."""
+    ops = q["opciones"]
+    n = len(ops)
+    if len(puntajes) != n or any(p is None or p != p for p in puntajes):
+        raise ErrorAPI(500, "The engine returned an invalid decision for question '%s'" % q["id"], "engine_error")
+    m = max(puntajes)
+    e = [math.exp(p - m) for p in puntajes]
+    suma = sum(e)
+    probs = [x / suma for x in e]
+    if q["tipo"] == "noul":
+        return {"type": "noul", "noul": probs[[o["key"] for o in ops].index("true")]}
+    probabilidades = {o["key"]: probs[i] for i, o in enumerate(ops)}
+    if q["tipo"] == "choice":
+        mejor = max(range(n), key=lambda i: (probs[i], -i))
+        uniforme = 1.0 / n
+        conf = 1.0 if n < 2 else max(0.0, (max(probs) - uniforme) / (1.0 - uniforme))
+        return {"type": "choice", "choice": ops[mejor]["key"], "probabilities": probabilidades, "confidence": conf}
+    esperado = sum(i * p for i, p in enumerate(probs))
+    modo = max(range(n), key=lambda i: (probs[i], -i))
+    dist = sum(p * abs(i - modo) for i, p in enumerate(probs))
+    dist_u = sum(abs(i - (n - 1) / 2.0) / n for i in range(n))
+    conf = max(0.0, 1.0 - dist / dist_u)
+    return {"type": "score", "score": esperado, "legend": {o["key"]: o["crudo"] for o in ops},
+            "probabilities": probabilidades, "confidence": conf}
+
+
 class Trabajo:
     def __init__(self, accion, modelo, prompt="", params=None, origen=""):
         self.id = "t" + secrets.token_hex(6)
@@ -1855,7 +2007,7 @@ class Manejador(BaseHTTPRequestHandler):
         if ruta == "/api/v0/models":
             return self._json(200, {"object": "list", "data": [
                 {"id": m["id"], "object": "model",
-                 "type": "embeddings" if m["embedding"] else ("vlm" if m["vision"] else "llm"),
+                 "type": "embeddings" if m["embedding"] else ("decision" if m["decision"] else ("vlm" if m["vision"] else "llm")),
                  "publisher": m["publisher"], "arch": m["arch"], "compatibility_type": "gguf",
                  "quantization": m["cuantizacion"],
                  "state": "loaded" if puente.motor.get("modelo_cargado") == m["id"] else "not-loaded",
@@ -1936,6 +2088,8 @@ class Manejador(BaseHTTPRequestHandler):
             return self._generar(ruta.endswith("chat/completions"))
         if ruta == "/v1/embeddings":
             return self._embeddings()
+        if ruta == "/v1/systemone":
+            return self._decidir()
         if ruta == "/api/config":
             return self._guardar_config()
         if ruta == "/api/rescan":
@@ -2078,6 +2232,8 @@ class Manejador(BaseHTTPRequestHandler):
             raise ErrorAPI(404, "Model not found: '%s'. Check /v1/models." % pedido, "model_not_found")
         if m["embedding"]:
             raise ErrorAPI(400, "'%s' is an embeddings model, not a chat model." % m["id"])
+        if m["decision"]:
+            raise ErrorAPI(400, "'%s' is a decision model: it does not write text. Use POST /v1/systemone." % m["id"])
         if not m["soportado"]:
             raise ErrorAPI(400, "Model '%s' (architecture %s) is not supported by this version of the "
                                 "engine yet. Supported: %s." % (m["id"], m["arch"], ", ".join(sorted(ARQUITECTURAS_SOPORTADAS))),
@@ -2218,6 +2374,54 @@ class Manejador(BaseHTTPRequestHandler):
         self._registrar(t, {"prompt_tokens": p, "completion_tokens": 0, "total_tokens": p}, fin)
         return self._json(200, {"object": "list", "data": datos, "model": pedido or m["id"],
                                 "usage": {"prompt_tokens": p, "total_tokens": p}})
+
+    def _decidir(self):
+        """POST /v1/systemone (TypeSafe / llama.cpp format) for decision models (Liquid AI d1), text only."""
+        cfg, reg, puente = ESTADO["cfg"], ESTADO["registro"], ESTADO["puente"]
+        d = self._cuerpo()
+        pedido = d.get("model") or ""
+        m = reg.resolver(pedido) if pedido else (
+            (lambda c: c if c and c["decision"] else None)(reg.por_id(puente.motor.get("modelo_cargado") or "")) or
+            next((x for x in reg.modelos if x["decision"] and x["soportado"]), None))
+        if not m:
+            raise ErrorAPI(404, "Decision model not found%s. Check /v1/models: a decision model has the type 'decision'."
+                           % (": '%s'" % pedido if pedido else ""), "model_not_found")
+        if not m["decision"]:
+            raise ErrorAPI(501, "'%s' is not a decision model." % m["id"], "not_implemented")
+        if not m["soportado"]:
+            raise ErrorAPI(400, "Model '%s' (architecture %s) is not supported by this version of the engine yet."
+                           % (m["id"], m["arch"]), "model_not_supported")
+        preguntas = decision_preparar(d)
+        self._comprobar_memoria(m)
+        # With auto-relaunch the request waits: the engine watchdog reopens the window (see vigilar_motor and _eventos).
+        if not puente.motor_conectado() and not ESTADO.get("auto_relanzar"):
+            raise ErrorAPI(503, "The engine is not connected. On the server PC open http://localhost:%d/engine "
+                                "(or restart server.py)." % cfg["port"], "service_unavailable")
+        t = Trabajo("decidir", m, "", {"preguntas": preguntas}, origen=self.client_address[0])
+        self._comprobar_cola()
+        puente.stats["peticiones"] += 1
+        puente.encolar(t)
+        log.info("Request %s from %s -> %s (decision: %d questions)", t.id, self.client_address[0], m["id"], len(preguntas))
+        fin = {}
+        try:
+            for ev in self._eventos(t):
+                if ev.get("tipo") == "fin":
+                    fin = ev
+                elif ev.get("tipo") == "error":
+                    raise ErrorAPI(ev.get("codigo", 500), "Engine error: " + ev.get("mensaje", "desconocido"), "engine_error")
+        finally:
+            if not t.terminado:
+                puente.cancelar(t)
+        dec = fin.get("decisiones") or {}
+        respuestas = {}
+        for q in preguntas:
+            r = dec.get(q["id"])
+            if not r:
+                raise ErrorAPI(500, "The engine returned no decision for question '%s'" % q["id"], "engine_error")
+            respuestas[q["id"]] = decision_respuesta(q, r.get("puntajes") or [])
+        p = int(fin.get("prompt_tokens") or 0)
+        self._registrar(t, {"prompt_tokens": p, "completion_tokens": 0, "total_tokens": p}, fin)
+        return self._json(200, {"model": m["id"], "answers": respuestas, "usage": {"input_tokens": p, "output_tokens": 0}})
 
     def _eventos(self, t):
         """Event generator for the job, with timeout control."""

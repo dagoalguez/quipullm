@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+
+- **Decision models (Liquid AI d1), text only**: new endpoint `POST /v1/systemone` (request and answer as in llama.cpp), engine job `decidir`
+  and `web/js/decision.js`. The registry reads `<arch>.decision.type` (`lfm2-d1`); such a model is excluded from the chat page and the panel's
+  chat list and answers 400 on `/v1/chat/completions`; `/api/v0/models` reports type `decision`. New suite `tests/conformance/test_d1.py`
+  (95 checks against llama.cpp with a synthetic model; in `run_all.py --engine`) and 34 more API checks. Not run with the real d1 weights yet.
+- About dialog (chat and panel): a footer line `quipullm vX · Diego Guevara B. · Apache-2.0` opens version, author, contributions (Claude), license and a note that models keep their own licenses. EN/ES, no external links.
 - Tool calling smoke test repeated with gemma-3-4b-it on the GTX 1050 Ti (3 runs per kind): all 12 cases right. Numbers and caveats in docs/BENCHMARKS.md. No code change.
 
 ## 4.2.0

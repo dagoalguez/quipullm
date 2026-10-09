@@ -19,6 +19,16 @@
 - No grammar-constrained or JSON-schema-enforced output. `response_format: json_object` returns 400
   (as LM Studio did); `json_schema` is accepted but not enforced.
 - Not implemented: logprobs, `n > 1`, multiple models loaded at once.
+- **Decision models (Liquid d1, `POST /v1/systemone`)**: text only (images, audio and videos return 501). Checked only with a
+  synthetic model (random weights, `tests/conformance/gen_d1.py`): the number of prompt tokens equals llama.cpp's in all 10 requests
+  and the probabilities differ by at most ~7e-5 (the test accepts 1e-3), on SwiftShader (software WebGPU). **Not run with the real
+  d1-3B weights** (not downloaded in the test environment), so nothing is claimed about their speed or accuracy; the 8 ms that
+  Liquid reports is PyTorch on an RTX 4090. Each question is a separate prompt with no prompt-cache reuse (a request with
+  several questions repeats the shared state). The temperature that some d1 variants store in the file is not read (1.0 is used,
+  which is what the d1-3B conversion writes). Whether every per-tensor quantization type of the "AD-" files is readable is untested.
+  The d1 license (LFM Open License v1.0) is not Apache-2.0. Reference used: llama.cpp 8a1a9b5 with one slot (`-np 1`): with
+  several slots it shares the prompt prefix between questions and, on the synthetic model, later questions of a request changed
+  by up to ~5e-3 in probability, differently on each run; one question per request and `-np 1` match this engine.
 
 **Models**
 - Supported architectures are listed in the README. DeepSeek is the *Lite* variant only. `rope_freqs.weight` models and head dimension > 256 are unsupported.
