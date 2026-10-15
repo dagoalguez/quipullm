@@ -63,6 +63,27 @@ const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function estado(txt) { ui("estado", txt); }
 
+// Edge/Chrome put background tabs to sleep or discard them; a page holding a Web Lock is one of the documented exemptions
+// (Microsoft, "Sleeping Tabs FAQ"). The lock is never released while this window lives; the name has the engine id so a
+// new window that takes over does not queue behind an old one.
+try {
+  if (navigator.locks && navigator.locks.request)
+    navigator.locks.request("quipullm-engine-" + S.id, () => new Promise(() => {})).catch(() => {});
+} catch (e) { /* no Web Locks: nothing to hold */ }
+
+// Tells the server what the window is doing (visible / hidden / frozen / resumed), so that if the engine goes silent the
+// server log shows the last known state. Best effort: a frozen page cannot send anything after the "freeze" message.
+function avisarCiclo(que) {
+  try {
+    fetch("/engine/api/event", { method: "POST", keepalive: true, headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ motor: S.id, tipo: "ciclo", estado: que, visibilidad: document.visibilityState }) }).catch(() => {});
+  } catch (e) { /* ignore */ }
+}
+document.addEventListener("visibilitychange", () => avisarCiclo(document.visibilityState));
+document.addEventListener("freeze", () => avisarCiclo("frozen"));
+document.addEventListener("resume", () => avisarCiclo("resumed"));
+window.addEventListener("pagehide", () => avisarCiclo("pagehide"));
+
 async function informarEstado() {
   await evento({ tipo: "estado", modelo_cargado: S.modeloId, estado: S.ocupado ? "ocupado" : "listo",
     info: { gpu: S.gpu ? S.gpu.info : null, memory_mb: S.gpu ? Math.round(S.gpu.bytesUsados / 1e6) : 0, version: VERSION_MOTOR } });

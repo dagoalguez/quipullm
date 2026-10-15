@@ -23,6 +23,7 @@ Everything here is in the panel (Settings, on the server PC) and is saved to `co
 | Default response length (`default_max_tokens`) | Length of the answer when the request does not say. 0 = until the context is full (a long answer can take minutes on a slow GPU, so a value like 500 is usually kinder). |
 | Response length limit (`max_tokens_limit`) | Hard cap: no request can get a longer answer, whatever it asks. 0 = no cap. |
 | Open the engine at startup (`open_engine`) | Opens the engine window by itself when the server starts. |
+| Keep the engine alive (`keep_engine`) | Off by default. If the engine window was connected and then disappears (closed, or put to sleep by the browser) for about a minute, the server reopens it, even with no request waiting. It also reopens a window you close on purpose: turn it off to close it for good. Needs `open_engine`. |
 | Prompt cache (`prompt_cache`) | Experimental, LFM2 models only: reuses the part of the prompt shared with the previous request. Turn off to compare. |
 
 ### Response length: what the real limit is

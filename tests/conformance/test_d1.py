@@ -90,6 +90,13 @@ async def main():
                     break
                 await asyncio.sleep(0.5)
             check("motor conectado al servidor", st["engine"]["connected"], logs[-5:])
+            estado_locks = await motor.evaluate("navigator.locks.query()")
+            check("la ventana del motor retiene un Web Lock (exención de pestañas dormidas)",
+                  any(l["name"].startswith("quipullm-engine-") for l in estado_locks["held"]), estado_locks)
+            await motor.evaluate("document.dispatchEvent(new Event('freeze'))")
+            await asyncio.sleep(0.5)
+            check("la ventana avisa al servidor su ciclo de vida (freeze)", api("/api/status")[1]["engine"].get("window") == "frozen",
+                  api("/api/status")[1]["engine"])
             modelo = next((x for x in st["models"] if x["file"] == "d1-test-f16.gguf"), None)
             check("el servidor reconoce el modelo de decisión", bool(modelo) and modelo["decision"] is True and modelo["supported"], modelo)
             check("los demás modelos no son de decisión", all(not x["decision"] for x in st["models"] if x["file"] != "d1-test-f16.gguf"))

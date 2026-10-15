@@ -162,5 +162,30 @@ async def acerca():
             chk(nombre+": sin errores de JS", not errs, errs)
         await b.close()
 asyncio.run(acerca())
+async def reabrir():
+    from playwright.async_api import async_playwright as ap
+    CHAT=open(os.path.join(RAIZ,"web","chat.html"),encoding="utf-8").read()
+    st=dict(ST, engine={"connected":False,"loaded_model":None}, version="9.9.9", from_server_pc=True)
+    pedidos=[]; respuesta={"status":202,"body":json.dumps({"ok":True,"opening":True})}
+    async with ap() as p:
+        b=await p.chromium.launch(); ctx=await b.new_context(viewport={"width":1100,"height":700}); pg=await ctx.new_page(); errs=[]; pg.on("pageerror",lambda e:errs.append(str(e)))
+        async def h(r):
+            u=r.request.url
+            if u.endswith("/api/status"): return await r.fulfill(body=json.dumps(st),content_type="application/json")
+            if u.endswith("/chat"): return await r.fulfill(body=CHAT,content_type="text/html")
+            if u.endswith("/api/open-engine"):
+                pedidos.append(r.request.method); return await r.fulfill(status=respuesta["status"],body=respuesta["body"],content_type="application/json")
+            await r.fulfill(status=404,body="{}",content_type="application/json")
+        await pg.route("http://t.test/**",h); await pg.goto("http://t.test/chat"); await pg.wait_for_timeout(700)
+        chk("motor apagado: el aviso trae el boton Reabrir motor", await pg.locator("#btnReabrir").count()==1)
+        await pg.click("#btnReabrir"); await pg.wait_for_timeout(300)
+        chk("el boton pide POST /api/open-engine", pedidos==["POST"], pedidos)
+        chk("mientras abre muestra el mensaje y no se puede pulsar dos veces", "Opening the engine window" in await pg.inner_text("#avisosTxt"))
+        respuesta.update(status=403, body=json.dumps({"error":{"message":"necesita clave"}}))
+        await pg.reload(); await pg.wait_for_timeout(700); await pg.click("#btnReabrir"); await pg.wait_for_timeout(300)
+        chk("si el servidor rechaza, muestra el motivo y deja reintentar", "necesita clave" in await pg.inner_text("#avisosTxt") and await pg.locator("#btnReabrir").is_enabled())
+        chk("reabrir: sin errores de JS", not errs, errs)
+        await b.close()
+asyncio.run(reabrir())
 print("TOTAL", sum(res), "OK,", len(res)-sum(res), "fallas")
 import sys; sys.exit(1 if not all(res) else 0)

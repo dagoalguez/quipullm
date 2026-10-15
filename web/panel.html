@@ -165,6 +165,7 @@
             <div class="campo"><label for="cMaxTok" data-i="defMaxTok"></label><input id="cMaxTok" type="number" min="0" step="64"><span class="tenue" data-i="defMaxTokHelp"></span></div>
         <div class="campo"><label for="cMaxLim" data-i="maxTokLimit"></label><input id="cMaxLim" type="number" min="0" step="64"><span class="tenue" data-i="maxTokLimitHelp"></span></div>
         <div class="campo"><label for="cAbrir" data-i="openAtStart"></label><input id="cAbrir" type="checkbox"></div>
+        <div class="campo"><label for="cMantener" data-i="keepEngine"></label><input id="cMantener" type="checkbox"><span class="tenue" data-i="keepEngineHelp"></span></div>
       </div>
       <div>
         <div class="tenue" style="margin:5px 0" data-i="sampling"></div>
@@ -353,6 +354,8 @@ aboutTitle: "About quipullm", aboutVersion: "Version {v}", aboutDesc: "Self-host
  "keySet": "Key is set: other PCs must send it. Type a new one to change it, or - to remove it.",
  "keyNone": "No key. If you share this server, anyone on your network could use it.",
  "openAtStart": "Open the engine at startup",
+ "keepEngine": "Keep the engine alive",
+ "keepEngineHelp": "If the engine window disappears (closed, or put to sleep by the browser), reopen it after about a minute. It also reopens if you close it on purpose; turn this off to close it for good. Needs “Open the engine at startup”.",
  "sampling": "Default sampling (when the request does not specify it)",
  "temp": "Temperature",
  "repPen": "Repetition penalty",
@@ -506,6 +509,8 @@ aboutTitle: "Acerca de quipullm", aboutVersion: "Versión {v}", aboutDesc: "Serv
  "keySet": "Clave definida: las otras PC deben enviarla. Escribe una nueva para cambiarla, o - para quitarla.",
  "keyNone": "Sin clave. Si compartes este servidor, cualquiera en tu red podría usarlo.",
  "openAtStart": "Abrir el motor al iniciar",
+ "keepEngine": "Mantener el motor vivo",
+ "keepEngineHelp": "Si la ventana del motor desaparece (la cierras o el navegador la duerme), se reabre al cabo de un minuto aproximadamente. También se reabre si la cierras a propósito; desactívalo para cerrarla de verdad. Necesita «Abrir el motor al iniciar».",
  "sampling": "Muestreo por defecto (cuando la petición no lo indica)",
  "temp": "Temperatura",
  "repPen": "Penalización repetición",
@@ -818,14 +823,14 @@ async function cargarCfg() {
     const c = await (await fetch("/api/config")).json();
     for (const [id, k] of Object.entries(CFG_CAMPOS)) $(id).value = c[k];
     for (const [id, k] of Object.entries(CFG_MUESTREO)) $(id).value = c.default_sampling[k];
-    $("cAbrir").checked = c.open_engine; $("cClaveEstado").textContent = c.api_key_from_env ? t("keyEnv") : (c.api_key_set ? t("keySet") : t("keyNone")); $("cAuto").checked = c.memory_check;
+    $("cAbrir").checked = c.open_engine; $("cMantener").checked = !!c.keep_engine;$("cClaveEstado").textContent = c.api_key_from_env ? t("keyEnv") : (c.api_key_set ? t("keySet") : t("keyNone")); $("cAuto").checked = c.memory_check;
     const bloq = !c.editable;
     document.querySelectorAll("#cfgAviso ~ * input, #btnExaminar, #btnGuardarCfg").forEach((e) => { e.disabled = bloq; });
     cfgCargada = true;
   } catch {}
 }
 $("btnGuardarCfg").onclick = async () => {
-  const cuerpo = { default_sampling: {}, open_engine: $("cAbrir").checked, memory_check: $("cAuto").checked };
+  const cuerpo = { default_sampling: {}, open_engine: $("cAbrir").checked, keep_engine: $("cMantener").checked, memory_check: $("cAuto").checked };
   for (const [id, k] of Object.entries(CFG_CAMPOS)) cuerpo[k] = $(id).value;
   for (const [id, k] of Object.entries(CFG_MUESTREO)) cuerpo.default_sampling[k] = $(id).value;
   const nueva = $("cClaveApi").value.trim();

@@ -852,6 +852,21 @@ def main():
         cod, r, _ = c.pedir("/api/rescan", {})
         check("/api/rescan vuelve a leer la carpeta", cod == 200 and len(r["models"]) == 17)
 
+        print("\n== Reabrir el motor y ciclo de vida de la ventana")
+        cod, r, _ = c.pedir("/api/open-engine", {})
+        check("/api/open-engine con --no-engine: 409 engine_launch_disabled", cod == 409 and "engine_launch_disabled" in json.dumps(r), (cod, r))
+        motor.post("/engine/api/event", {"tipo": "ciclo", "estado": "hidden", "visibilidad": "hidden"})
+        cod, st, _ = c.pedir("/api/status")
+        check("status: el servidor guarda el último estado de la ventana del motor", st["engine"].get("window") == "hidden", st["engine"])
+        motor.post("/engine/api/event", {"tipo": "ciclo", "estado": "visible", "visibilidad": "visible"})
+        cod, st, _ = c.pedir("/api/status")
+        check("status: ... y lo actualiza", st["engine"].get("window") == "visible", st["engine"])
+        cod, r, _ = c.pedir("/api/config", {"keep_engine": True})
+        cod, cf, _ = c.pedir("/api/status")
+        cod, cfg_pub, _ = c.pedir("/api/config")
+        check("config: keep_engine se guarda y se publica", cod == 200 and cfg_pub.get("keep_engine") is True, cfg_pub)
+        c.pedir("/api/config", {"keep_engine": False})
+
         print("\n== Configuración desde el panel")
         cod, st, _ = c.pedir("/api/status")
         check("status informa nombre de la PC y que el panel se ve desde la PC servidora",
@@ -1138,6 +1153,8 @@ def main():
         check("el panel (mismo origen) sí puede guardar", cod == 200, (cod, r))
         cod, r, _ = c.pedir("/api/load", {"model": "lfm2-1.2b-rag"}, cabeceras=cruzado)
         check("otro sitio no puede cargar modelos (/api/load)", cod == 403, cod)
+        cod, r, _ = c.pedir("/api/open-engine", {}, cabeceras=cruzado)
+        check("otro sitio no puede abrir ventanas del motor (/api/open-engine)", cod == 403, cod)
         cod, r, _ = c.pedir("/engine/api/next?motor=intruso", cabeceras=cruzado)
         check("otro sitio no puede pedir trabajos del motor", cod == 403, cod)
         cod, r, _ = c.pedir("/engine/api/event", {"id": "x"}, cabeceras=ajeno)
@@ -1240,6 +1257,42 @@ def resiliencia():
     check("watchdog: retries after the interval", paso(t0 + 95) is True and len(aperturas) == 2)
     puente.activos["x"] = object()
     check("watchdog: does not reopen while a job is active", paso(t0 + 500) is False and len(aperturas) == 2)
+
+    # keep_engine: an engine that was connected and disappeared is reopened even with nothing waiting
+    flujo_k = io.StringIO()
+    hk = logging.StreamHandler(flujo_k)
+    sv.log.addHandler(hk)
+    nivel_k = sv.log.level
+    sv.log.setLevel(logging.INFO)
+    try:
+        cfg_k = {"port": 0, "keep_engine": False}
+        ap_k = []
+        puente.activos.clear()
+        puente.pendientes.clear()
+        puente.motor.update(visto=t0 - 100, ciclo={"estado": "hidden"})
+        paso_k = sv.vigilar_motor(cfg_k, intervalo=3600, abrir=lambda: ap_k.append(1))
+        check("keep_engine off: a vanished engine with nothing waiting is not reopened", paso_k(t0) is False and not ap_k)
+        check("watchdog: logs once that the engine went silent, with the last window state",
+              flujo_k.getvalue().count("has been silent") == 1 and "hidden" in flujo_k.getvalue(), flujo_k.getvalue())
+        paso_k(t0 + 1)
+        check("watchdog: does not repeat the 'silent' log line", flujo_k.getvalue().count("has been silent") == 1)
+        cfg_k["keep_engine"] = True
+        puente.motor["visto"] = t0 - 30
+        check("keep_engine on: silent for less than 60 s, not reopened", paso_k(t0 + 2) is False and not ap_k)
+        puente.motor["visto"] = t0 - 100
+        check("keep_engine on: silent for more than 60 s, reopened with nothing waiting", paso_k(t0 + 3) is True and len(ap_k) == 1)
+        check("keep_engine on: not repeated before the retry interval", paso_k(t0 + 100) is False and len(ap_k) == 1)
+        check("keep_engine on: retried after the interval", paso_k(t0 + 190) is True and len(ap_k) == 2)
+        puente.activos["y"] = object()
+        check("keep_engine on: never while a job is active", paso_k(t0 + 1000) is False and len(ap_k) == 2)
+        puente.activos.clear()
+        puente.motor["visto"] = 0.0
+        ap_k.clear()
+        paso_n = sv.vigilar_motor(cfg_k, intervalo=3600, abrir=lambda: ap_k.append(1))
+        check("keep_engine on: an engine that never connected is left to the start-up launch", paso_n(t0 + 5000) is False and not ap_k)
+    finally:
+        sv.log.removeHandler(hk)
+        sv.log.setLevel(nivel_k)
 
     # handle_error: one log line vs traceback
     flujo = io.StringIO()

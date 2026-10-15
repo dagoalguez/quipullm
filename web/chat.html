@@ -193,7 +193,7 @@ const TXT = {
     send: "Send", stop: "Stop", newChat: "New chat", panel: "Panel", placeholder: "Write a message… (Enter to send, Shift+Enter for a new line)",
     system: "System instruction", systemPh: "Optional. Example: Answer briefly, in Spanish.",
     keyNeeded: "This server asks for an access key:", keyBtn: "Use key", keyBad: "That key was not accepted.",
-    noModels: "No supported chat model was found in the models folder.", engineOff: "The engine is not connected. On the server PC open the panel and press “Open engine”.",
+    noModels: "No supported chat model was found in the models folder.", engineOff: "The engine is not connected. On the server PC open the panel and press “Open engine”.", reopen: "Reopen engine", reopening: "Opening the engine window on the server PC…", reopenFail: "Could not reopen the engine: ",
     ready: "ready", working: "busy", off: "engine off", down: "server unreachable",
     waiting: "waiting for the engine…", queued: "waiting in the queue ({n} before you)", loading: "loading the model…", generating: "generating…",
     first: "first token in {s} s", copy: "Copy", copied: "Copied", regen: "Regenerate", cut: "answer cut (length limit)", cutCtx: "answer cut: the context is full, start a new chat to continue", ctxNote: "This conversation is close to the model's memory limit. For better answers, start a new chat.", ctxFull: "This conversation no longer fits in the model's memory. Start a new chat to continue.", toBottom: "Scroll to the latest message", error: "Error: ", reasoning: "Reasoning", privacy: "Not encrypted (HTTP): use it only on a network you trust.",
@@ -207,7 +207,7 @@ const TXT = {
     send: "Enviar", stop: "Parar", newChat: "Nuevo chat", panel: "Panel", placeholder: "Escribe un mensaje… (Enter envía, Shift+Enter hace salto de línea)",
     system: "Instrucción del sistema", systemPh: "Opcional. Ejemplo: Responde breve y en español.",
     keyNeeded: "Este servidor pide una clave de acceso:", keyBtn: "Usar clave", keyBad: "Esa clave no fue aceptada.",
-    noModels: "No hay ningún modelo de chat compatible en la carpeta de modelos.", engineOff: "El motor no está conectado. En la PC servidora abre el panel y pulsa «Open engine».",
+    noModels: "No hay ningún modelo de chat compatible en la carpeta de modelos.", engineOff: "El motor no está conectado. En la PC servidora abre el panel y pulsa «Open engine».", reopen: "Reabrir motor", reopening: "Abriendo la ventana del motor en la PC servidora…", reopenFail: "No se pudo reabrir el motor: ",
     ready: "listo", working: "ocupado", off: "motor apagado", down: "servidor inaccesible",
     waiting: "esperando al motor…", queued: "en cola ({n} antes que tú)", loading: "cargando el modelo…", generating: "generando…",
     first: "primer token en {s} s", copy: "Copiar", copied: "Copiado", regen: "Regenerar", cut: "respuesta cortada (límite de longitud)", cutCtx: "respuesta cortada: el contexto está lleno, empieza un chat nuevo para continuar", ctxNote: "Esta conversación está cerca del límite de memoria del modelo. Para mejores respuestas, inicia un chat nuevo.", ctxFull: "Esta conversación ya no cabe en la memoria del modelo. Inicia un chat nuevo para continuar.", toBottom: "Ir al último mensaje", error: "Error: ", reasoning: "Razonamiento", privacy: "Sin cifrar (HTTP): úsalo solo en una red de confianza.",
@@ -371,13 +371,27 @@ async function estado() {
   $("avisosTxt").textContent = "";
   if (typeof BD !== "undefined" && BD.fallo) aviso(t("noSave"));
   if (!lista.length) aviso(t("noModels"));
-  else if (!conectado) aviso(t("engineOff"));
+  else if (!conectado) avisoMotor();
   const necesitaClave = requiereClave && (!CLAVE.get() || !claveValida);
   if (necesitaClave && !$("avisoClave").firstChild) pedirClave(CLAVE.get() ? t("keyBad") : "");
   if (!necesitaClave) $("avisoClave").textContent = "";
   return st;
 }
 function aviso(txt) { const d = document.createElement("div"); d.className = "aviso"; d.textContent = txt; $("avisosTxt").append(d); }
+// "Engine not connected" notice with a button that asks the server to open the engine window on the server PC.
+function avisoMotor() {
+  const d = document.createElement("div"); d.className = "aviso";
+  const s = document.createElement("span"); s.textContent = t("engineOff") + " ";
+  const b = document.createElement("button"); b.type = "button"; b.id = "btnReabrir"; b.textContent = t("reopen");
+  b.onclick = async () => {
+    b.disabled = true; s.textContent = t("reopening");
+    try {
+      const r = await fetch("/api/open-engine", { method: "POST", headers: cab({ "Content-Type": "application/json" }), body: "{}" });
+      if (!r.ok) { const j = await r.json().catch(() => ({})); s.textContent = t("reopenFail") + ((j.error && j.error.message) || r.status); b.disabled = false; }
+    } catch (e) { s.textContent = t("reopenFail") + e.message; b.disabled = false; }
+  };
+  d.append(s, b); $("avisosTxt").append(d);
+}
 function pedirClave(extra) {
   const d = document.createElement("div"); d.className = "aviso";
   const i = document.createElement("input"); i.type = "password"; i.autocomplete = "off";

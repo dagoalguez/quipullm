@@ -48,7 +48,8 @@ except Exception:   # the server keeps working (with fallback templates)
     templates = None
 
 VERSION = "4.2.0"
-ESPERA_REAPERTURA = 90   # seconds a waiting request keeps waiting for the engine window to be reopened (auto-relaunch)
+REAPERTURA_MIN = 20      # seconds between two "reopen the engine" requests (POST /api/open-engine)
+ESPERA_REAPERTURA = 90  # seconds a waiting request keeps waiting for the engine window to be reopened (auto-relaunch)
 DIR = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.join(DIR, "web")
 
@@ -122,6 +123,7 @@ CONFIG_DEFECTO = {
     "tiled_prefill": True,   # tiled prefill kernel (K-quant models); False = the v2.0 method
     "prompt_cache": True,    # reuse the previous request's state when the new prompt continues it (LFM2 models only for now)
     "open_engine": True,
+    "keep_engine": False,     # True: if the engine window disappears (closed, discarded by the browser), reopen it after 60 s without asking
     "default_max_tokens": 0,  # response length when the request does not say (0 = until the context is full, as before)
     "max_tokens_limit": 0,    # hard cap on the response length, whatever the request asks (0 = none; the context still limits it)
     "chat_models": [],        # ids shown in the /chat page, in this order (the first one is the default); empty = all chat models
@@ -237,7 +239,7 @@ def validar_ajustes(d):
             errores.append("The API key cannot contain spaces or be longer than 200 characters")
         else:
             cambios["api_key"] = clave
-    for k in ("open_engine", "memory_check", "prompt_cache"):
+    for k in ("open_engine", "keep_engine", "memory_check", "prompt_cache"):
         if k in d:
             cambios[k] = bool(d[k])
     if "model_overrides" in d:
@@ -1628,6 +1630,11 @@ class Puente:
         if tipo == "log":
             log.info("[engine] %s", d.get("mensaje", ""))
             return {"ok": True}
+        if tipo == "ciclo":      # visible / hidden / frozen / resumed / pagehide, reported by the engine window
+            que = str(d.get("estado") or "")[:20]
+            self.motor["ciclo"] = {"estado": que, "desde": time.time()}
+            log.info("Engine window: %s", que)
+            return {"ok": True}
         t = self.activos.get(d.get("id"))
         if not t:
             return {"cancelar": True}
@@ -2068,11 +2075,13 @@ class Manejador(BaseHTTPRequestHandler):
     def _post(self):
         ruta = urllib.parse.urlparse(self.path).path.rstrip("/")
         puente, reg = ESTADO["puente"], ESTADO["registro"]
-        if ruta.startswith("/v1/") or ruta in ("/api/load", "/api/unload", "/api/rescan"):
+        if ruta.startswith("/v1/") or ruta in ("/api/load", "/api/unload", "/api/rescan", "/api/open-engine"):
             self._autorizar()
-        if ruta in ("/api/load", "/api/unload", "/api/rescan") and not operacion_admin_permitida(self._local(), clave_api(ESTADO["cfg"])):
-            raise ErrorAPI(403, "Loading, unloading and rescanning from another PC require an API key. "
+        if ruta in ("/api/load", "/api/unload", "/api/rescan", "/api/open-engine") and not operacion_admin_permitida(self._local(), clave_api(ESTADO["cfg"])):
+            raise ErrorAPI(403, "Loading, unloading, rescanning and reopening the engine from another PC require an API key. "
                                 "Set one (or start the server with --share) or do it from the server PC.")
+        if ruta == "/api/open-engine":
+            return self._reabrir_motor()
         if ruta.startswith("/engine/api/"):
             if not self._local():
                 return self._error(403, "Only accessible from the server PC")
@@ -2115,6 +2124,23 @@ class Manejador(BaseHTTPRequestHandler):
             return self._json(202, {"ok": True})
         return self._error(404, "Route not found: " + ruta)
 
+    def _reabrir_motor(self):
+        """Opens the engine window on the server PC when there is none. Never opens a second one: a new window takes
+        control and would interrupt the work and unload the model."""
+        puente = ESTADO["puente"]
+        if not ESTADO.get("auto_relanzar"):
+            raise ErrorAPI(409, "Opening the engine from the server is turned off (open_engine is off or the server "
+                                "was started with --no-engine).", "engine_launch_disabled")
+        if puente.motor_conectado():
+            return self._json(200, {"ok": True, "already_connected": True})
+        ahora = time.time()
+        if ahora - ESTADO.get("ultima_reapertura", 0.0) < REAPERTURA_MIN:
+            return self._json(200, {"ok": True, "opening": True, "already_requested": True})
+        ESTADO["ultima_reapertura"] = ahora
+        log.info("Reopening the engine window on request from %s", self.client_address[0])
+        threading.Thread(target=abrir_motor, args=(ESTADO["cfg"],), daemon=True).start()
+        return self._json(202, {"ok": True, "opening": True})
+
     def _comprobar_memoria(self, m):
         """Rejects with a clear message a model that almost certainly does not fit (so the PC does not hang)."""
         cfg, reg, puente = ESTADO["cfg"], ESTADO["registro"], ESTADO["puente"]
@@ -2132,7 +2158,7 @@ class Manejador(BaseHTTPRequestHandler):
         cfg = ESTADO["cfg"]
         return {"models_dir": cfg["models_dir"], "default_ctx": cfg["default_ctx"], "kv_max_mb": cfg["kv_max_mb"],
                 "timeout_seconds": cfg["timeout_seconds"], "port": cfg["port"],
-                "open_engine": bool(cfg.get("open_engine", True)), "chat_models": list(cfg.get("chat_models") or []),
+                "open_engine": bool(cfg.get("open_engine", True)), "keep_engine": bool(cfg.get("keep_engine", False)), "chat_models": list(cfg.get("chat_models") or []),
                 "default_max_tokens": int(cfg.get("default_max_tokens") or 0), "max_tokens_limit": int(cfg.get("max_tokens_limit") or 0),
                 "memory_check": bool(cfg.get("memory_check", True)), "gpu_memory_gb": cfg.get("gpu_memory_gb", 0),
                 "max_queue": cfg.get("max_queue", 64), "api_key_set": bool(clave_api(cfg)),
@@ -2200,6 +2226,7 @@ class Manejador(BaseHTTPRequestHandler):
             "reachable_at": self._direcciones(),
             "engine": {"connected": puente.motor_conectado(), "state": puente.motor.get("estado"),
                       "info": puente.motor.get("info"), "loaded_model": puente.motor.get("modelo_cargado"),
+                      "window": (puente.motor.get("ciclo") or {}).get("estado"),
                       "seconds_since_contact": round(time.time() - puente.motor["visto"], 1)
                       if puente.motor["visto"] else None},
             "current_job": {"id": activo.id, "model": activo.modelo["id"] if activo.modelo else None,
@@ -2662,12 +2689,15 @@ def buscar_navegador(cfg, plataforma=None, which=None):
     return None
 
 
-def vigilar_motor(cfg, intervalo=5, sin_senal=20, reintento=90, abrir=None):
+def vigilar_motor(cfg, intervalo=5, sin_senal=20, reintento=90, abrir=None, keep_sin_senal=60, keep_reintento=180):
     """Engine watchdog. If requests are waiting and the engine window has been silent for more than `sin_senal`
     seconds, reopen it (at most once every `reintento` seconds). With nothing waiting it does nothing, so closing
-    the window on purpose does not reopen it. Starts a daemon thread and returns its step function `paso()`
-    (so it can be tested; `paso(ahora)` accepts an injected clock)."""
-    estado = {"ultimo": 0.0}
+    the window on purpose does not reopen it, unless cfg["keep_engine"] is on: then an engine that WAS connected and
+    has been silent for more than `keep_sin_senal` seconds is reopened even with nothing waiting (at most once every
+    `keep_reintento` seconds). An engine that never connected is left to the start-up launch.
+    Starts a daemon thread and returns its step function `paso()` (so it can be tested; `paso(ahora)` accepts an
+    injected clock)."""
+    estado = {"ultimo": 0.0, "ultimo_keep": 0.0, "perdido": False}
     if abrir is None:
         def abrir():
             threading.Thread(target=abrir_motor, args=(cfg,), daemon=True).start()
@@ -2676,6 +2706,23 @@ def vigilar_motor(cfg, intervalo=5, sin_senal=20, reintento=90, abrir=None):
         try:
             ahora = time.time() if ahora is None else ahora
             puente = ESTADO["puente"]
+            visto = puente.motor["visto"]
+            silencio = ahora - visto
+            # One log line when a connected engine goes silent, with what the window last reported (hidden, frozen...).
+            if visto and silencio > 35 and not puente.activos:
+                if not estado["perdido"]:
+                    estado["perdido"] = True
+                    ciclo = puente.motor.get("ciclo") or {}
+                    log.warning("The engine has been silent for %.0f s (the window last reported: %s).", silencio,
+                                ciclo.get("estado") or "nothing")
+            elif silencio <= 35:
+                estado["perdido"] = False
+            if (cfg.get("keep_engine") and visto and not puente.activos and silencio > keep_sin_senal
+                    and ahora - estado["ultimo_keep"] >= keep_reintento):
+                estado["ultimo_keep"] = estado["ultimo"] = ahora
+                log.warning("keep_engine is on and the engine has been silent for %.0f s: reopening the engine window.", silencio)
+                abrir()
+                return True
             if not puente.pendientes or puente.activos:       # nothing waiting, or the engine is busy with a job
                 return False
             if ahora - puente.motor["visto"] <= sin_senal or ahora - estado["ultimo"] < reintento:

@@ -6,6 +6,13 @@
   and `web/js/decision.js`. The registry reads `<arch>.decision.type` (`lfm2-d1`); such a model is excluded from the chat page and the panel's
   chat list and answers 400 on `/v1/chat/completions`; `/api/v0/models` reports type `decision`. New suite `tests/conformance/test_d1.py`
   (95 checks against llama.cpp with a synthetic model; in `run_all.py --engine`) and 34 more API checks. Not run with the real d1 weights yet.
+- **Engine window disappearing while idle** (browser puts it to sleep, or it is closed, and nothing was waiting so the watchdog stayed quiet):
+  the engine window now holds a Web Lock (a documented exemption from Edge's sleeping tabs) and reports `visible/hidden/frozen/resumed/pagehide`
+  to the server; when a connected engine goes silent the log says for how long and what the window last reported. New setting `keep_engine`
+  (off by default; panel: "Keep the engine alive"): a connected engine that is silent for 60 s is reopened even with nothing waiting (at most once
+  every 3 min). New `POST /api/open-engine` and a "Reopen engine" button in the chat's "engine not connected" notice (local, or with the API key; never opens a
+  second window while one is connected). **Not verified:** whether the Web Lock is enough to stop Edge from sleeping the real window, since that was only
+  checked in Chromium with SwiftShader (the lock is held and the lifecycle messages arrive).
 - About dialog (chat and panel): a footer line `quipullm vX · Diego Guevara B. · Apache-2.0` opens version, author, contributions (Claude), license and a note that models keep their own licenses. EN/ES, no external links.
 - Tool calling smoke test repeated with gemma-3-4b-it on the GTX 1050 Ti (3 runs per kind): all 12 cases right. Numbers and caveats in docs/BENCHMARKS.md. No code change.
 
