@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>quipullm: GPU readback and upload timing</title>
+<style>
+  body{font:15px/1.5 system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem;background:#111;color:#e8e8e8}
+  button{font:inherit;padding:.5rem 1rem;margin:.25rem .25rem .25rem 0}
+  input{font:inherit;width:6rem}
+  pre{background:#1b1b1b;padding:1rem;overflow:auto;white-space:pre-wrap}
+  .tenue{color:#9a9a9a}
+</style></head>
+<body>
+<h1>GPU readback and upload timing</h1>
+<p class="tenue">Experiment for streaming MoE experts from disk. It loads no model. It measures, on THIS browser and GPU:
+(1) how long it takes to ask the GPU for a small result and wait for it (an engine that streams experts has to do that
+in every MoE layer to learn which experts were chosen), and (2) how fast data can be copied from the page into GPU memory.
+Close other heavy programs first; run it twice.</p>
+<p>Layers per token <input id="capas" type="number" value="26" min="1" max="200">
+ Expert size, MB <input id="mb" type="number" value="5" min="0.1" max="200" step="0.1">
+ Repetitions <input id="reps" type="number" value="200" min="20" max="2000"></p>
+<button id="go">Run</button>
+<pre id="out">Press Run.</pre>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const lineas = [];
+function p(t) { lineas.push(t); $("out").textContent = lineas.join("\n"); }
+const med = (a) => { const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
+const p95 = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(0.95 * (s.length - 1))]; };
+const ms = (x) => x.toFixed(3) + " ms";
+
+async function main() {
+  lineas.length = 0;
+  if (!navigator.gpu) { p("This browser has no WebGPU."); return; }
+  const ad = await navigator.gpu.requestAdapter();
+  if (!ad) { p("No WebGPU adapter."); return; }
+  const info = ad.info || {};
+  const dev = await ad.requestDevice();
+  const res = { adapter: [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" "),
+                maxBufferSize: ad.limits.maxBufferSize, maxStorageBufferBindingSize: ad.limits.maxStorageBufferBindingSize };
+  p("Adapter: " + (res.adapter || "(not reported)"));
+  p("maxBufferSize " + res.maxBufferSize + ", maxStorageBufferBindingSize " + res.maxStorageBufferBindingSize);
+  p("User agent: " + navigator.userAgent);
+  const capas = +$("capas").value, reps = +$("reps").value, mb = +$("mb").value;
+
+  // A trivial compute shader that writes 64 u32 (stands for "the router picked these experts").
+  const mod = dev.createShaderModule({ code: `
+    @group(0) @binding(0) var<storage, read_write> o : array<u32>;
+    @compute @workgroup_size(64) fn main(@builtin(global_invocation_id) g : vec3<u32>) { o[g.x] = g.x * 7u + 1u; }` });
+  const pipe = dev.createComputePipeline({ layout: "auto", compute: { module: mod, entryPoint: "main" } });
+  const gb = dev.createBuffer({ size: 256, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
+  const lect = dev.createBuffer({ size: 256, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+  const bg = dev.createBindGroup({ layout: pipe.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: gb } }] });
+
+  async function unaLectura() {
+    const t0 = performance.now();
+    const enc = dev.createCommandEncoder();
+    const pass = enc.beginComputePass(); pass.setPipeline(pipe); pass.setBindGroup(0, bg); pass.dispatchWorkgroups(1); pass.end();
+    enc.copyBufferToBuffer(gb, 0, lect, 0, 256);
+    dev.queue.submit([enc.finish()]);
+    await lect.mapAsync(GPUMapMode.READ);
+    const v = new Uint32Array(lect.getMappedRange().slice(0)); lect.unmap();
+    if (v[3] !== 22) throw new Error("unexpected readback value");
+    return performance.now() - t0;
+  }
+  for (let i = 0; i < 20; i++) await unaLectura();              // warm-up
+  const uno = [];
+  for (let i = 0; i < reps; i++) uno.push(await unaLectura());
+  res.one_readback_ms = { median: +med(uno).toFixed(3), p95: +p95(uno).toFixed(3) };
+  p("\n1) One small readback (submit + mapAsync), " + reps + " times:");
+  p("   median " + ms(med(uno)) + "   p95 " + ms(p95(uno)));
+
+  const tokens = [];
+  const nTok = Math.max(10, Math.floor(reps / 4));
+  for (let k = 0; k < nTok; k++) {
+    const t0 = performance.now();
+    for (let l = 0; l < capas; l++) await unaLectura();
+    tokens.push(performance.now() - t0);
+  }
+  res.per_token_wait_ms = { layers: capas, median: +med(tokens).toFixed(2), p95: +p95(tokens).toFixed(2) };
+  p("\n2) One token = " + capas + " readbacks in a row (one per MoE layer), " + nTok + " tokens:");
+  p("   median " + ms(med(tokens)) + " per token spent only waiting for these round trips   p95 " + ms(p95(tokens)));
+  p("   -> that wait alone caps the speed at about " + (1000 / med(tokens)).toFixed(1) + " tokens/s, before any disk or compute time.");
+
+  // Upload: page memory -> GPU buffer, the size of one expert.
+  const bytes = Math.floor(mb * 1e6) >> 2 << 2;
+  const dst = dev.createBuffer({ size: bytes, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+  const fuente = new Uint8Array(bytes); for (let i = 0; i < bytes; i += 4096) fuente[i] = i & 255;
+  async function unaSubida() {
+    const t0 = performance.now();
+    dev.queue.writeBuffer(dst, 0, fuente);
+    await dev.queue.onSubmittedWorkDone();
+    return performance.now() - t0;
+  }
+  for (let i = 0; i < 5; i++) await unaSubida();
+  const sub = [];
+  const nSub = Math.min(reps, 200);
+  for (let i = 0; i < nSub; i++) sub.push(await unaSubida());
+  res.upload = { expert_MB: +(bytes / 1e6).toFixed(2), median_ms: +med(sub).toFixed(3), p95_ms: +p95(sub).toFixed(3),
+                 MB_per_s: +((bytes / 1e6) / (med(sub) / 1000)).toFixed(0) };
+  p("\n3) Copy " + (bytes / 1e6).toFixed(2) + " MB (one expert) from the page into GPU memory, " + nSub + " times:");
+  p("   median " + ms(med(sub)) + "   p95 " + ms(p95(sub)) + "   about " + res.upload.MB_per_s + " MB/s");
+  p("   (on a GPU that shares RAM with the CPU this is a memory copy; on a discrete card it crosses the PCIe bus)");
+
+  p("\nPaste this block when asking for help interpreting it:");
+  p(JSON.stringify(res, null, 1));
+  dev.destroy();
+}
+$("go").onclick = async () => {
+  $("go").disabled = true;
+  try { await main(); } catch (e) { p("ERROR: " + e.message); }
+  $("go").disabled = false;
+};
+</script>
+</body></html>
