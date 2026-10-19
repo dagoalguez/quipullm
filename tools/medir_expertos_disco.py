@@ -8,11 +8,12 @@ with HTTP Range requests (the path the engine uses).  It changes nothing and loa
 Usage:
   python tools/medir_expertos_disco.py MODEL.gguf
   python tools/medir_expertos_disco.py MODEL.gguf --server http://127.0.0.1:1234 --id MODEL_ID_IN_/v1/models
-  options: --reps 300 (experts read per pass)  --seed 1
+  options: --reps 300 (experts read per pass)  --seed 1   (use a new --seed each time: the OS remembers what you read before)
 
 How to read the result:
   * "first pass" reads experts that were probably not read recently; "second pass" reads the same ones again, so the
-    operating system keeps them in RAM (page cache). The truth for a real run is somewhere between them. To get an honest
+    operating system keeps them in RAM (page cache). The direct and the HTTP tests use DIFFERENT experts, so one does not
+    warm the cache for the other. The truth for a real run is somewhere between them. To get an honest
     first pass, run it right after a reboot, or on a model file you have not loaded in the last hours.
   * "tokens/s ceiling" is plain arithmetic: how many tokens per second you would get if the only cost were reading
     the experts of every MoE layer from disk with NO expert cache. It ignores GPU time, so the real figure is lower.
@@ -59,10 +60,13 @@ def expertos_del_modelo(ruta):
     return info, capas
 
 
-def muestra(capas, n_exp, reps, semilla):
-    rnd = random.Random(semilla)
-    ids = sorted(capas)
-    return [(rnd.choice(ids), rnd.randrange(n_exp)) for _ in range(reps)]
+def muestras(capas, n_exp, reps, semilla, cuantas):
+    """`cuantas` lists of `reps` (layer, expert) pairs, with no pair in two lists: each way of reading (directly, through
+    the server) gets experts the other one has not just pulled into the OS cache. Returns (lists, reps_used)."""
+    pares = [(l, e) for l in sorted(capas) for e in range(n_exp)]
+    random.Random(semilla).shuffle(pares)
+    reps = max(1, min(reps, len(pares) // cuantas))
+    return [pares[i * reps:(i + 1) * reps] for i in range(cuantas)], reps
 
 
 def leer_archivo(ruta):
@@ -135,13 +139,14 @@ def main():
     if a.server and info["bytes_per_expert"] / 3 < 65536:
         print("  NOTE: slices under 64 KB. On Linux the server's small keep-alive answers wait ~40 ms for a TCP ACK (seen at 4 KB "
               "in a synthetic test, not at 64 KB or more), so the HTTP times below would be dominated by that, not by the disk.")
-    plan = muestra(capas, info["experts"], a.reps, a.seed)
+    planes, reps = muestras(capas, info["experts"], a.reps, a.seed, 2 if a.server else 1)
+    if reps != a.reps:
+        print("  (using %d experts per pass: the model has only %d in total)" % (reps, info["experts"] * info["moe_layers"]))
     res = {"model": os.path.basename(a.modelo), **info}
-    for titulo, fabrica in (("directly from the file", lambda: leer_archivo(a.modelo)),
-                            ("through the server (HTTP Range)", (lambda: leer_http(a.server, a.id)) if a.server else None)):
-        if fabrica is None:
-            continue
-        print("\n%s, %d random experts:" % (titulo, a.reps))
+    for plan, (titulo, fabrica) in zip(planes, [x for x in (
+            ("directly from the file", lambda: leer_archivo(a.modelo)),
+            ("through the server (HTTP Range)", (lambda: leer_http(a.server, a.id)) if a.server else None)) if x[1]]):
+        print("\n%s, %d random experts (different ones for each way of reading):" % (titulo, reps))
         leer, cerrar = fabrica()
         try:
             r1 = medir(leer, capas, plan)
