@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **`--share` key fix**: a key saved from the panel now takes effect immediately. The key that `--share` generates for the run is dropped when you save
+  your own; if you set `LLM_API_KEY` yourself it still has priority, and the panel now says the saved key is not in effect instead of silently
+  returning 401. New checks in `tests/api_tests.py`.
+
 - **Decision models (Liquid AI d1), text only**: new endpoint `POST /v1/systemone` (request and answer as in llama.cpp), engine job `decidir`
   and `web/js/decision.js`. The registry reads `<arch>.decision.type` (`lfm2-d1`); such a model is excluded from the chat page and the panel's
   chat list and answers 400 on `/v1/chat/completions`; `/api/v0/models` reports type `decision`. New suite `tests/conformance/test_d1.py`

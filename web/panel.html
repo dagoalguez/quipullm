@@ -351,6 +351,7 @@ aboutTitle: "About quipullm", aboutVersion: "Version {v}", aboutDesc: "Self-host
  "shareOpen": "Shared on the network WITHOUT an API key: anyone who can reach this PC can use your GPU. Set an API key below, or restart with <code>--share</code>.",
  "shareNoTls": "Traffic is not encrypted (HTTP): share only on a network you trust.",
  "keyEnv": "set by the LLM_API_KEY variable",
+ "keyIgnored": " The new key is NOT in effect: the LLM_API_KEY variable takes priority. Remove the variable and restart the server.",
  "keySet": "Key is set: other PCs must send it. Type a new one to change it, or - to remove it.",
  "keyNone": "No key. If you share this server, anyone on your network could use it.",
  "openAtStart": "Open the engine at startup",
@@ -506,6 +507,7 @@ aboutTitle: "Acerca de quipullm", aboutVersion: "Versión {v}", aboutDesc: "Serv
  "shareOpen": "Compartido en la red SIN clave de API: cualquiera que llegue a esta PC puede usar tu GPU. Pon una clave de API abajo o reinicia con <code>--share</code>.",
  "shareNoTls": "El tráfico no va cifrado (HTTP): compártelo solo en una red de confianza.",
  "keyEnv": "definida por la variable LLM_API_KEY",
+ "keyIgnored": " La clave nueva NO está en efecto: la variable LLM_API_KEY tiene prioridad. Quita la variable y reinicia el servidor.",
  "keySet": "Clave definida: las otras PC deben enviarla. Escribe una nueva para cambiarla, o - para quitarla.",
  "keyNone": "Sin clave. Si compartes este servidor, cualquiera en tu red podría usarlo.",
  "openAtStart": "Abrir el motor al iniciar",
@@ -839,7 +841,7 @@ $("btnGuardarCfg").onclick = async () => {
   const r = await fetch("/api/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) });
   const j = await r.json();
   if (!r.ok) return msgCfg(j.error.message, false);
-  msgCfg(t("saved", { n: j.models }) + (j.restart_required ? t("savedRestart") : ""), true);
+  msgCfg(t("saved", { n: j.models }) + (j.restart_required ? t("savedRestart") : "") + (j.api_key_ignored ? t("keyIgnored") : ""), !j.api_key_ignored);
   if (nueva && nueva !== "-") CLAVE.set(nueva); else if (nueva === "-") CLAVE.set("");
   $("cClaveApi").value = ""; $("pClave").value = CLAVE.get(); cfgCargada = false;
   ultimoModelos = ""; refrescar();

@@ -1766,6 +1766,20 @@ def preparar_compartir(cfg, entorno=None):
     return clave
 
 
+def soltar_clave_compartida(estado, entorno, clave_nueva):
+    """A key saved from the panel must take effect right away.
+
+    If the key in force is the one --share generated for this run, drop it so the saved key applies.
+    If LLM_API_KEY was set by the user, it keeps priority: returns True so the panel can warn that the
+    saved key is not in effect. Returns False otherwise."""
+    generada = estado.get("clave_compartir")
+    if generada and entorno.get("LLM_API_KEY") == generada:
+        entorno.pop("LLM_API_KEY", None)
+        estado["clave_compartir"] = None
+        return False
+    return bool(entorno.get("LLM_API_KEY")) and entorno.get("LLM_API_KEY") != clave_nueva
+
+
 class ErrorAPI(Exception):
     def __init__(self, codigo, mensaje, tipo="invalid_request_error", cabeceras=None):
         super().__init__(mensaje)
@@ -2202,9 +2216,15 @@ class Manejador(BaseHTTPRequestHandler):
             if puente.motor_conectado() and puente.motor.get("modelo_cargado"):
                 puente.encolar(Trabajo("descargar", None, origen="panel"))   # the loaded model no longer belongs to the folder
             reg.escanear()
+        ignorada = False
+        if "api_key" in cambios:
+            ignorada = soltar_clave_compartida(ESTADO, os.environ, cambios["api_key"])
         log.info("Settings changed from the panel: %s", ", ".join(sorted(cambios)))
+        if ignorada:
+            log.warning("The key saved in the panel is NOT in effect: the LLM_API_KEY variable takes priority. "
+                        "Remove the variable and restart the server.")
         return self._json(200, {"ok": True, "models": len(reg.modelos), "restart_required": puerto_nuevo,
-                                "config": self._config_publica()})
+                                "api_key_ignored": ignorada, "config": self._config_publica()})
 
     # ------------------------------------------------------------ state
     def _direcciones(self):

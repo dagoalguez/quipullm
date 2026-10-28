@@ -1344,6 +1344,14 @@ def resiliencia():
     ent3 = {"LLM_API_KEY": "del-entorno"}
     check("--share: keeps the key from the environment", sv.preparar_compartir({"host": "127.0.0.1"}, ent3) is None and ent3["LLM_API_KEY"] == "del-entorno")
     check("--share: two runs create different keys", sv.preparar_compartir({}, {}) != sv.preparar_compartir({}, {}))
+    # a key saved from the panel must take effect (the generated --share key must not override it)
+    est_s = {"clave_compartir": "generada"}; ent_s = {"LLM_API_KEY": "generada"}
+    r_s = sv.soltar_clave_compartida(est_s, ent_s, "diego")
+    check("saved key replaces the --share generated key", r_s is False and "LLM_API_KEY" not in ent_s and est_s["clave_compartir"] is None, (r_s, ent_s, est_s))
+    est_u = {"clave_compartir": None}; ent_u = {"LLM_API_KEY": "del-usuario"}
+    check("saved key does not remove a key set by the user (it warns)", sv.soltar_clave_compartida(est_u, ent_u, "diego") is True and ent_u["LLM_API_KEY"] == "del-usuario")
+    check("saved key equal to the variable: no warning", sv.soltar_clave_compartida({}, {"LLM_API_KEY": "igual"}, "igual") is False)
+    check("no variable: nothing to warn", sv.soltar_clave_compartida({}, {}, "diego") is False)
     check("max_tokens_efectivo: nothing asked, no default -> until the context is full", sv.max_tokens_efectivo(None) == -1)
     # tool calling: the streaming filter must give the same result however the text is cut into tokens
     texto_tc = 'Voy a mirar. [TOOL_REQUEST]{"name": "a", "arguments": {"x": 1}}[END_TOOL_REQUEST] y [TOOL_REQUEST]{"name":"b","arguments":"{\\"y\\": 2}"}[END_TOOL_REQUEST]fin'
